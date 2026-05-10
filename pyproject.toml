@@ -50,9 +50,10 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/k-georgiou/pharmacon"
-Repository = "https://github.com/k-georgiou/pharmacon"
-Issues = "https://github.com/k-georgiou/pharmacon/issues"
+# Public URLs will be enabled after manuscript acceptance
+# Homepage = "https://github.com/k-georgiou/pharmacon"
+# Repository = "https://github.com/k-georgiou/pharmacon"
+# Issues = "https://github.com/k-georgiou/pharmacon/issues"
 
 [project.optional-dependencies]
 mpi = [
