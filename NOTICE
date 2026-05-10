@@ -44,17 +44,42 @@ track academic impact. Thank you.
 THIRD-PARTY COMPONENTS
 ================================================================================
 
-Pharmacon depends on a number of third-party open-source libraries, each of
-which is distributed under its own license. Notable dependencies include:
+Pharmacon depends on the following third-party open-source libraries. Each is
+distributed under its own license; the SPDX identifiers below are best-effort
+summaries — consult each project for the authoritative terms.
 
-  - MDAnalysis        (GPL v2+)   https://www.mdanalysis.org/
-  - RDKit             (BSD-3)     https://www.rdkit.org/
-  - NumPy             (BSD-3)     https://numpy.org/
-  - SciPy             (BSD-3)     https://scipy.org/
-  - Matplotlib        (PSF-based) https://matplotlib.org/
-  - h5py              (BSD-3)     https://www.h5py.org/
-  - NetworkX          (BSD-3)     https://networkx.org/
-  - Rich              (MIT)       https://github.com/Textualize/rich
+Required runtime dependencies (declared in pyproject.toml):
+
+  - MDAnalysis        (GPL-2.0-or-later) https://www.mdanalysis.org/
+  - configobj         (BSD-3-Clause)     https://github.com/DiffSK/configobj
+  - h5py              (BSD-3-Clause)     https://www.h5py.org/
+  - matplotlib        (Matplotlib;       https://matplotlib.org/
+                       PSF-based)
+  - networkx          (BSD-3-Clause)     https://networkx.org/
+  - numpy             (BSD-3-Clause)     https://numpy.org/
+  - periodictable     (Public Domain)    https://github.com/pkienzle/periodictable
+  - psutil            (BSD-3-Clause)     https://github.com/giampaolo/psutil
+  - pyarrow           (Apache-2.0)       https://arrow.apache.org/
+  - pyfiglet          (MIT)              https://github.com/pwaller/pyfiglet
+  - pyjokes           (BSD-3-Clause)     https://pyjok.es/
+  - rdkit             (BSD-3-Clause)     https://www.rdkit.org/
+  - rich              (MIT)              https://github.com/Textualize/rich
+  - rich-argparse     (MIT)              https://github.com/hamdanal/rich-argparse
+  - scipy             (BSD-3-Clause)     https://scipy.org/
+  - typing_extensions (PSF-2.0)          https://github.com/python/typing_extensions
+
+Optional dependencies — MPI extra ([mpi]):
+
+  - mpi4py            (BSD-3-Clause)     https://mpi4py.readthedocs.io/
+
+Optional dependencies — development extra ([dev]):
+
+  - pytest            (MIT)              https://pytest.org/
+  - MDAnalysisTests   (GPL-2.0-or-later) https://www.mdanalysis.org/
+
+Note on copyleft: MDAnalysis and MDAnalysisTests are distributed under
+GPL-2.0-or-later. Pharmacon imports MDAnalysis at runtime; redistribution of
+combined works is subject to the terms of the GPL.
 
 Users are responsible for complying with the licenses of all third-party
 dependencies they install and use alongside Pharmacon.
