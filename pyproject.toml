@@ -1,0 +1,94 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pharmacon"
+version = "1.0.0"
+description = "Pharmacon: A Molecular Dynamics Analysis Suite."
+readme = "README.md"
+requires-python = ">=3.12"
+
+authors = [
+  { name = "Kyriakos Georgiou", email = "" }
+]
+
+license = { text = "Apache-2.0" }
+
+keywords = ["molecular-dynamics", "simulation", "analysis", "chemistry", "hdf5", "mdanalysis"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering :: Chemistry",
+  "Topic :: Scientific/Engineering :: Bio-Informatics",
+  "Operating System :: OS Independent",
+  "Intended Audience :: Science/Research",
+  "Typing :: Typed",
+]
+
+dependencies = [
+    "MDAnalysis>=2.7",
+    "configobj>=5.0",
+    "h5py>=3.10",
+    "matplotlib>=3.8",
+    "networkx>=3.2",
+    "numpy>=1.26",
+    "periodictable>=1.7",
+    "psutil>=5.9",
+    "pyarrow>=14.0",
+    "pyfiglet>=1.0",
+    "pyjokes>=0.7",
+    "rdkit>=2024.03.1",
+    "rich>=13.0",
+    "rich-argparse>=1.4",
+    "scipy>=1.11",
+    "typing_extensions>=4.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/k-georgiou/pharmacon"
+Repository = "https://github.com/k-georgiou/pharmacon"
+Issues = "https://github.com/k-georgiou/pharmacon/issues"
+
+[project.optional-dependencies]
+mpi = [
+    "mpi4py>=3.1",
+]
+dev = [
+    "pytest>=8.0",
+    "MDAnalysisTests>=2.7",
+]
+
+[project.scripts]
+pharmacon = "pharmacon.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+pharmacon = ["py.typed"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["B008"]
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    # MDAnalysis/RDKit: known limitation when standardising certain molecular topologies
+    "ignore:The standardization could not be completed.*:UserWarning",
+    # MDAnalysis: expected when tests intentionally create empty (0-atom) universes
+    "ignore:Can not guess attributes for universe with 0 atoms:UserWarning",
+]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+ignore_missing_imports = true

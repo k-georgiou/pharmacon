@@ -1,0 +1,194 @@
+# =========================================================================
+# Pharmacon — .gitignore
+#
+# Principle: commit source code, docs, examples, and curated configuration.
+# Block everything else: caches, build artefacts, OS/editor junk, MD inputs,
+# generated outputs, and user-local test data.
+# =========================================================================
+
+# ---- Python bytecode / caches ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.pyd
+
+# ---- Build / packaging artifacts ----
+build/
+dist/
+wheels/
+sdist/
+downloads/
+*.egg
+*.egg-info/
+.eggs/
+MANIFEST
+pip-wheel-metadata/
+share/python-wheels/
+.installed.cfg
+*.manifest
+*.spec
+
+# Sphinx (covered by build/, listed for clarity)
+docs/build/
+docs/_build/
+docs/source/_autosummary/
+
+# ---- Virtual environments ----
+venv/
+.venv/
+env/
+.env/
+ENV/
+env.bak/
+venv.bak/
+.python-version
+
+# ---- Editor / IDE ----
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+*.bak
+*.orig
+*.rej
+*.old
+
+# ---- Claude / Agent scratch ----
+.claude/
+.cache/
+
+# ---- Conda ----
+*.conda
+.conda/
+conda-bld/
+
+# ---- Test / coverage ----
+.pytest_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+coverage.xml
+coverage/
+*.cover
+*.py,cover
+htmlcov/
+.hypothesis/
+nosetests.xml
+.benchmarks/
+
+# ---- Type checking / linting ----
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytype/
+.pyre/
+.ruff_cache/
+
+# ---- Jupyter ----
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ---- Logs ----
+*.log
+logs/
+
+# ---- Pharmacon run artifacts ----
+# HDF5 results (large, regenerable)
+*.pta
+*.psa
+*.h5
+*.hdf5
+
+# Generated plot outputs
+*.png
+*.jpg
+*.jpeg
+*.pdf
+*.svg
+*.tif
+*.tiff
+# …but keep the project logo and anything shipped in resources/
+!resources/**
+# …except one-time backups saved during editing
+resources/*.original.png
+# …and keep any images deliberately committed under docs/
+!docs/**/*.png
+!docs/**/*.svg
+
+# ---- Trajectory / topology / structural inputs ----
+# These are user data — never commit, regardless of where they live
+*.xtc
+*.trr
+*.dcd
+*.nc
+*.netcdf
+*.mdcrd
+*.lh5
+*.crd
+*.trj
+*.gro
+*.prmtop
+*.parm7
+*.psf
+*.tpr
+*.dms
+*.pdb
+*.cif
+*.mol2
+*.sdf
+*.smi
+*.fasta
+
+# ---- Numerical / tabular fixture data ----
+# MDAnalysis trajectory offset caches and other regenerable arrays/tables
+.*_offsets.npz
+*.npz
+*.npy
+*.parquet
+*.feather
+*.arrow
+*.pickle
+*.pkl
+
+# ---- tests/ lockdown ----
+# tests/ should contain only Python sources. Any subdirectory under tests/
+# is assumed to be local user data unless it's an allowed helper directory.
+tests/*/
+!tests/__pycache__/   # already ignored above; harmless re-allow gets re-blocked
+# (Add `!tests/fixtures/` here if a curated, small fixtures directory is introduced.)
+
+# ---- Workspace / temp ----
+tmp/
+temp/
+.tmp/
+pharmacon_work/
+pharmacon_tmp/
+
+# ---- Secrets ----
+.env
+.env.*
+*.pem
+*.key
+secrets.*
+.pypirc
+
+# ---- OS junk ----
+.DS_Store
+._*
+.AppleDouble
+.LSOverride
+.Spotlight-V100
+.Trashes
+Icon?
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+*.lnk
+
+# ---- Node (safety net; not currently used) ----
+node_modules/

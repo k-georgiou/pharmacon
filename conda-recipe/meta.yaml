@@ -1,0 +1,74 @@
+{% set name = "pharmacon" %}
+{% set version = "1.0.0" %}
+
+package:
+  name: {{ name }}
+  version: {{ version }}
+
+source:
+  # For local builds during development:
+  path: ..
+  # For release builds from PyPI, replace the above with:
+  # url: https://pypi.org/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
+  # sha256: <SHA256_HASH>
+
+build:
+  number: 0
+  noarch: python
+  script: {{ PYTHON }} -m pip install . --no-deps --no-build-isolation -vv
+  entry_points:
+    - pharmacon = pharmacon.main:main
+
+requirements:
+  host:
+    - python >=3.12
+    - pip
+    - setuptools >=68
+    - wheel
+
+  run:
+    - python >=3.12
+    - numpy >=1.26
+    - scipy >=1.11
+    - matplotlib-base >=3.8
+    - h5py >=3.10
+    - networkx >=3.2
+    - rdkit >=2024.03.1
+    - mdanalysis >=2.7
+    - configobj >=5.0
+    - periodictable >=1.7
+    - psutil >=5.9
+    - pyarrow >=14.0
+    - pyfiglet >=1.0
+    - pyjokes >=0.7
+    - rich >=13.0
+    - rich-argparse >=1.4
+    - typing_extensions >=4.0
+
+test:
+  imports:
+    - pharmacon
+    - pharmacon.fileio
+    - pharmacon.analyzer
+    - pharmacon.plotter
+    - pharmacon.constants
+    - pharmacon.logger
+  commands:
+    - pharmacon --help
+
+about:
+  home: https://github.com/k-georgiou/pharmacon
+  license: Apache-2.0
+  license_family: Apache
+  license_file: LICENSE.txt
+  summary: "Pharmacon: A Molecular Dynamics Analysis Suite."
+  description: |
+    Pharmacon is a pure Python command-line toolkit for analyzing
+    molecular-dynamics trajectories and static structures. It persists
+    results as signed, self-describing HDF5 artifacts (.pta / .psa)
+    and produces publication-ready plots.
+  dev_url: https://github.com/k-georgiou/pharmacon
+
+extra:
+  recipe-maintainers:
+    - k-georgiou

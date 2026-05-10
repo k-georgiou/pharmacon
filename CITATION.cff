@@ -1,0 +1,43 @@
+cff-version: 1.2.0
+title: "Pharmacon: A Molecular Dynamics Analysis Suite"
+message: "If you use this software, please cite it using the metadata from this file."
+type: software
+authors:
+  - given-names: Kyriakos
+    family-names: Georgiou
+    email: 
+    affiliation: "Department of Pharmacy, National and Kapodistrian University of Athens"
+    orcid: ""  # TODO: add your ORCID (e.g. https://orcid.org/0000-0000-0000-0000)
+repository-code: "https://github.com/k-georgiou/pharmacon"
+url: "https://github.com/k-georgiou/pharmacon"
+license: Apache-2.0
+version: 1.0.0
+date-released: "2026-04-13"
+keywords:
+  - molecular-dynamics
+  - simulation
+  - analysis
+  - chemistry
+  - hdf5
+  - mdanalysis
+  - python
+  - trajectory
+  - protein-ligand interactions
+  - PCA
+abstract: >-
+  Pharmacon is a pure Python command-line toolkit for analyzing
+  molecular-dynamics trajectories and static structures. It persists
+  results as signed, self-describing HDF5 artifacts (.pta / .psa)
+  and produces publication-ready plots.
+preferred-citation:
+  type: article
+  title: "Pharmacon: a unified command-line suite for molecular-dynamics trajectory and structure analysis"
+  authors:
+    - given-names: Kyriakos
+      family-names: Georgiou
+      email: 
+      affiliation: "Department of Pharmacy, National and Kapodistrian University of Athens"
+  journal: "TBD"          # TODO: update when published
+  year: 2026              # TODO: update when published
+  doi: "TBD"              # TODO: update when published (e.g. 10.1038/s41597-023-00972-3)
+  url: "TBD"              # TODO: update when published

@@ -1,0 +1,28 @@
+name: pharmacon
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python >=3.12
+  - numpy >=1.26
+  - scipy >=1.11
+  - matplotlib >=3.8
+  - h5py >=3.10
+  - networkx >=3.2
+  - rdkit >=2024.03.1
+  - mdanalysis >=2.7
+  - configobj >=5.0
+  - periodictable >=1.7
+  - psutil >=5.9
+  - pyarrow >=14.0
+  - rich >=13.0
+  - pip
+
+  - pytest >=8.0
+
+  - pip:
+      - pyfiglet >=1.0
+      - pyjokes >=0.7
+      - rich-argparse >=1.4
+      - typing_extensions >=4.0

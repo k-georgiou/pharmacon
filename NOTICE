@@ -1,0 +1,60 @@
+Pharmacon — Molecular Dynamics Suite
+Copyright 2026 Kyriakos Georgiou
+Department of Pharmacy, National and Kapodistrian University of Athens
+Contact: 
+
+This product is licensed under the Apache License, Version 2.0 (the
+"License"); you may not use this software except in compliance with the
+License. A copy of the License is distributed with this software as
+LICENSE.txt and is also available at:
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+================================================================================
+ACADEMIC CITATION REQUEST
+================================================================================
+
+If you use Pharmacon — in whole or in part, modified or unmodified — in any
+work that results in a publication (including but not limited to peer-reviewed
+articles, preprints, conference papers, posters, theses, technical reports,
+books, and public datasets), please cite the following reference:
+
+    Georgiou, K. Pharmacon: a unified command-line suite for
+    molecular-dynamics trajectory and structure analysis.
+    [Journal / Preprint Server], Year.
+    DOI: [DOI PLACEHOLDER — TO BE UPDATED ON PUBLICATION]
+    URL: [URL PLACEHOLDER — TO BE UPDATED ON PUBLICATION]
+
+BibTeX:
+
+    @article{georgiou_pharmacon,
+      author  = {Georgiou, Kyriakos},
+      title   = {Pharmacon: a unified command-line suite for
+                 molecular-dynamics trajectory and structure analysis},
+      journal = {TBD},
+      year    = {TBD},
+      doi     = {TBD},
+      url     = {TBD}
+    }
+
+Citing Pharmacon supports its continued development and allows the author to
+track academic impact. Thank you.
+
+================================================================================
+THIRD-PARTY COMPONENTS
+================================================================================
+
+Pharmacon depends on a number of third-party open-source libraries, each of
+which is distributed under its own license. Notable dependencies include:
+
+  - MDAnalysis        (GPL v2+)   https://www.mdanalysis.org/
+  - RDKit             (BSD-3)     https://www.rdkit.org/
+  - NumPy             (BSD-3)     https://numpy.org/
+  - SciPy             (BSD-3)     https://scipy.org/
+  - Matplotlib        (PSF-based) https://matplotlib.org/
+  - h5py              (BSD-3)     https://www.h5py.org/
+  - NetworkX          (BSD-3)     https://networkx.org/
+  - Rich              (MIT)       https://github.com/Textualize/rich
+
+Users are responsible for complying with the licenses of all third-party
+dependencies they install and use alongside Pharmacon.
