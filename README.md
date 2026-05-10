@@ -9,8 +9,8 @@
 > A unified command-line toolkit for analyzing molecular-dynamics trajectories and static structures, persisting results as signed, self-describing HDF5 artifacts, and producing publication-ready plots.
 
 > **If you use Pharmacon in your research, please cite:**
-> Georgiou, K. *Pharmacon: a unified command-line suite for molecular-dynamics trajectory and structure analysis.*
-> [Nature Scientific Data (2023)](https://www.nature.com/articles/s41597-023-00972-3) | DOI: `[TO BE UPDATED]`
+> Georgiou, K. *Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit.*
+> [Journal of Chemical Information and Modeling (2026)](https://www.todo) | DOI: `[TO BE UPDATED]`
 
 [![Python](https://img.shields.io/badge/python-%E2%89%A53.12-blue.svg?logo=python&logoColor=white)](https://www.python.org/)
 [![Status](https://img.shields.io/badge/status-alpha-orange.svg)]()
@@ -945,10 +945,10 @@ ws  = PharmaconWorkspace(is_tmp_dir_needed=False)
 
 `PharmaconWorkspace` respects two environment variables:
 
-| Variable | Default | Meaning |
-|---|---|---|
-| `PHARMACON_WORKDIR` | `.` | Base working directory |
-| `PHARMACON_TEMPDIR` | `None` | Base directory for per-run scratch space |
+| Variable            | Default   | Meaning                                  |
+|---------------------|-----------|------------------------------------------|
+| `PHARMACON_WORKDIR` | `.`       | Base working directory                   |
+| `PHARMACON_TEMPDIR` | `None`    | Base directory for per-run scratch space |
 
 Any temporary directory created with `is_tmp_dir_needed=True` is cleaned up
 via `atexit` unless `cleanup_on_exit=False` is passed.
