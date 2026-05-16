@@ -192,3 +192,6 @@ Desktop.ini
 
 # ---- Node (safety net; not currently used) ----
 node_modules/
+
+# ---- Local dev scratch ----
+dev_temporary/
