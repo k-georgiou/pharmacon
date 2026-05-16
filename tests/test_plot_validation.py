@@ -152,3 +152,54 @@ class TestValidationFailures:
         )
         with pytest.raises(ValidationError, match="artifact_status is 'FAILED'"):
             validate(args)
+
+
+# ---------------------------------------------------------------------------
+# Version-ordering: file < runtime passes; file > runtime fails clearly
+# ---------------------------------------------------------------------------
+
+class TestVersionOrdering:
+    def test_old_file_validates_against_newer_runtime(self, tmp_path):
+        """A PTA written by a previous Pharmacon release must still be
+        readable by the current (newer) runtime."""
+        pta = build_pli_pta(
+            tmp_path / "pli_old.pta", n_frames=10,
+            pharmacon_version="0.1.0",
+        )
+        args = _make_args(
+            input_pta=pta,
+            output_dir=tmp_path / "out",
+            log_path=tmp_path / "plot.log",
+        )
+        validate(args)  # must not raise
+
+    def test_newer_file_rejected_with_clear_message(self, tmp_path):
+        """A PTA written by a future Pharmacon must fail with a clear
+        'upgrade Pharmacon' error, not a confusing signature mismatch."""
+        pta = build_pli_pta(
+            tmp_path / "pli_new.pta", n_frames=10,
+            pharmacon_version="9.9.9",
+        )
+        args = _make_args(
+            input_pta=pta,
+            output_dir=tmp_path / "out",
+            log_path=tmp_path / "plot.log",
+        )
+        with pytest.raises(ValidationError, match=r"requires Pharmacon >= 9\.9\.9"):
+            validate(args)
+
+    def test_tampered_version_breaks_signature(self, tmp_path):
+        """If somebody edits pharmacon_version without re-signing the
+        file, the signature regenerated under the new (claimed) version
+        will not match the stored one."""
+        pta = build_pli_pta(tmp_path / "pli.pta", n_frames=10)
+        with _open_attrs(pta) as f:
+            # Lower-than-runtime so we don't trip the version gate first
+            f.attrs["pharmacon_version"] = "0.5.0"
+        args = _make_args(
+            input_pta=pta,
+            output_dir=tmp_path / "out",
+            log_path=tmp_path / "plot.log",
+        )
+        with pytest.raises(ValidationError, match="signature mismatch"):
+            validate(args)

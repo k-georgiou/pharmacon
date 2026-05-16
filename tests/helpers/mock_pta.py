@@ -68,9 +68,37 @@ DEFAULT_PPI_ROWS: tuple = (
 )
 
 
+def _override_version(path: Path, version: str) -> None:
+    """Re-sign a freshly-built PTA with a non-default pharmacon_version.
+
+    PharmaconPTAFile always stamps the current runtime version at creation;
+    use this only when a test explicitly wants to simulate a file produced
+    by another release. Updates the version attr AND regenerates the
+    signature/fingerprint under the new version so validation can succeed
+    on the cooked file.
+    """
+    import h5py
+    from pharmacon.utils.fingerprint import create_pharmacon_signature
+
+    fmt = path.suffix.lstrip(".").lower() or "pta"
+    with h5py.File(path, "a") as fh:
+        attrs = fh.attrs
+        attrs["pharmacon_version"] = version
+        command = str(attrs.get("command", "")).strip()
+        subcommand = str(attrs.get("subcommand", "")).strip()
+        if command and subcommand:
+            sig = create_pharmacon_signature(
+                format_name=fmt,
+                command=command, subcommand=subcommand, version=version,
+            )
+            attrs["signature"] = sig.signature
+            attrs["fingerprint"] = sig.fingerprint
+
+
 def _write_interaction_pta(*, path: Path, group: str, subcommand: str,
                            rows: Sequence[Sequence], n_frames: int,
-                           description: str) -> Path:
+                           description: str,
+                           pharmacon_version: str | None = None) -> Path:
     """Internal: build a PLI- or PPI-shaped PTA. Used by both builders."""
 
     records: list[dict] = []
@@ -180,26 +208,33 @@ def _write_interaction_pta(*, path: Path, group: str, subcommand: str,
             overwrite=True,
         )
 
+    if pharmacon_version is not None:
+        _override_version(path, pharmacon_version)
+
     return path
 
 
 def build_pli_pta(path: Path, *, rows: Sequence = DEFAULT_PLI_ROWS,
-                  n_frames: int = 100) -> Path:
+                  n_frames: int = 100,
+                  pharmacon_version: str | None = None) -> Path:
     """Build a mock PL-interactions PTA at `path` and return the path."""
     return _write_interaction_pta(
         path=path, group="pl_interactions", subcommand="pl-interactions",
         rows=rows, n_frames=n_frames,
         description="Protein-Ligand Interaction Analysis (mock)",
+        pharmacon_version=pharmacon_version,
     )
 
 
 def build_ppi_pta(path: Path, *, rows: Sequence = DEFAULT_PPI_ROWS,
-                  n_frames: int = 100) -> Path:
+                  n_frames: int = 100,
+                  pharmacon_version: str | None = None) -> Path:
     """Build a mock PP-interactions PTA at `path` and return the path."""
     return _write_interaction_pta(
         path=path, group="pp_interactions", subcommand="pp-interactions",
         rows=rows, n_frames=n_frames,
         description="Protein-Protein Interaction Analysis (mock)",
+        pharmacon_version=pharmacon_version,
     )
 
 
