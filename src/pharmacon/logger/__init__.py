@@ -138,6 +138,8 @@ def setup_logger(*,
                  file: bool = False,
                  file_level: Union[int, str] = logging.DEBUG,
                  log_file: Union[str, Path, None] = None,
+                 log_queue=None,
+                 queue_level: Union[int, str] = logging.DEBUG,
                  per_rank: bool = True,
                  mpi_rank: int | None = None,
                  replace: bool = True) -> PharmaconLogger:
@@ -158,6 +160,7 @@ def setup_logger(*,
     """
     t_level = _parse_level(terminal_level)
     f_level = _parse_level(file_level)
+    q_level = _parse_level(queue_level)
 
     root: PharmaconLogger = logging.getLogger(_ROOT_NAME)  # type: ignore[assignment]
 
@@ -169,6 +172,8 @@ def setup_logger(*,
     effective_min = t_level if terminal else logging.CRITICAL
     if file:
         effective_min = min(effective_min, f_level)
+    if log_queue is not None:
+        effective_min = min(effective_min, q_level)
     root.setLevel(effective_min)
 
     # Terminal handler
@@ -191,6 +196,16 @@ def setup_logger(*,
             rank=mpi_rank,
         )
         root.addHandler(f_handler)
+
+    # Queue handler — ships LogRecords to another process (or thread) that
+    # owns the real handlers. Used by multi-process workers so the main
+    # process can write to a single shared log file in real time.
+    if log_queue is not None:
+        from logging.handlers import QueueHandler
+
+        q_handler = QueueHandler(log_queue)
+        q_handler.setLevel(q_level)
+        root.addHandler(q_handler)
 
     # Prevent records from leaking into the root Python logger.
     root.propagate = False

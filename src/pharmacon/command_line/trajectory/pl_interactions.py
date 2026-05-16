@@ -585,6 +585,7 @@ def _worker_process_frames(*,
                            atom_indices: dict,
                            db_path,
                            log_file=None,
+                           log_queue=None,
                            file_logging_level: str = "TRACE"):
     """
     Processes specific frames of a molecular trajectory using a worker process, handling
@@ -619,13 +620,26 @@ def _worker_process_frames(*,
     import sqlite3
     from pharmacon.logger import setup_logger, get_logger
 
-    # Set up per-worker logger (file-only, no terminal to avoid interleaved output)
-    if log_file is not None:
+    # Set up per-worker logger. If a log_queue was supplied by the parent,
+    # records are streamed live into the parent's main log via the
+    # QueueListener running there (single unified log file). Otherwise
+    # fall back to a per-rank file (still safe; was the prior behaviour).
+    if log_queue is not None:
+        setup_logger(
+            terminal=False,
+            file=False,
+            log_queue=log_queue,
+            queue_level=file_logging_level,
+            replace=False,
+        )
+    elif log_file is not None:
         setup_logger(
             terminal=False,
             file=True,
             file_level=file_logging_level,
             log_file=log_file,
+            per_rank=True,
+            mpi_rank=worker_id,
             replace=False,
         )
     log = get_logger(f"{__name__}.worker_{worker_id}")
@@ -960,7 +974,10 @@ def run(args: argparse.Namespace) -> None:
         import json
         import sqlite3
         import math
+        import logging
+        import multiprocessing
         from concurrent.futures import ProcessPoolExecutor, as_completed
+        from logging.handlers import QueueListener
 
         log.info("Parallel mode: %d workers for %d frames.", n_workers, n_analysis_frames)
 
@@ -1004,28 +1021,41 @@ def run(args: argparse.Namespace) -> None:
         for i, chunk in enumerate(frame_chunks):
             log.debug("  Worker %d: frames %d–%d (%d frames)", i, chunk[0], chunk[-1], len(chunk))
 
-        with ProcessPoolExecutor(max_workers=len(frame_chunks)) as executor:
-            futures = {
-                executor.submit(
-                    _worker_process_frames,
-                    worker_id=i,
-                    topology=args.topology,
-                    trajectory=args.trajectory,
-                    wrapping=wrapping,
-                    unwrapping=unwrapping,
-                    frame_indices=chunk,
-                    disable_flags=disable_flags,
-                    atom_indices=atom_indices,
-                    db_path=db_path,
-                    log_file=args.log,
-                    file_logging_level=args.file_logging_level,
-                ): i
-                for i, chunk in enumerate(frame_chunks)
-            }
-            for future in as_completed(futures):
-                wid = futures[future]
-                _, n_done = future.result()
-                log.info("Worker %d finished (%d frames processed).", wid, n_done)
+        # Live-merge worker logs into the main log via a multiprocessing queue.
+        # The Manager-backed Queue is picklable across spawn/fork contexts, so it
+        # passes safely as a kwarg to ProcessPoolExecutor workers.
+        log_manager = multiprocessing.Manager()
+        log_queue = log_manager.Queue()
+        listener_handlers = list(logging.getLogger("pharmacon").handlers)
+        log_listener = QueueListener(log_queue, *listener_handlers, respect_handler_level=True)
+        log_listener.start()
+
+        try:
+            with ProcessPoolExecutor(max_workers=len(frame_chunks)) as executor:
+                futures = {
+                    executor.submit(
+                        _worker_process_frames,
+                        worker_id=i,
+                        topology=args.topology,
+                        trajectory=args.trajectory,
+                        wrapping=wrapping,
+                        unwrapping=unwrapping,
+                        frame_indices=chunk,
+                        disable_flags=disable_flags,
+                        atom_indices=atom_indices,
+                        db_path=db_path,
+                        log_queue=log_queue,
+                        file_logging_level=args.file_logging_level,
+                    ): i
+                    for i, chunk in enumerate(frame_chunks)
+                }
+                for future in as_completed(futures):
+                    wid = futures[future]
+                    _, n_done = future.result()
+                    log.info("Worker %d finished (%d frames processed).", wid, n_done)
+        finally:
+            log_listener.stop()
+            log_manager.shutdown()
 
         calc_end_time = time.time()
         calc_time = calc_end_time - calc_start_time

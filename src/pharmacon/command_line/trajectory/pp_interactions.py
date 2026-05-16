@@ -684,7 +684,10 @@ def run(args: argparse.Namespace) -> None:
         import json
         import sqlite3
         import math
+        import logging
+        import multiprocessing
         from concurrent.futures import ProcessPoolExecutor, as_completed
+        from logging.handlers import QueueListener
 
         log.info("Parallel mode: %d workers for %d frames.", n_workers, n_analysis_frames)
 
@@ -727,28 +730,39 @@ def run(args: argparse.Namespace) -> None:
         for i, chunk in enumerate(frame_chunks):
             log.debug("  Worker %d: frames %d–%d (%d frames)", i, chunk[0], chunk[-1], len(chunk))
 
-        with ProcessPoolExecutor(max_workers=len(frame_chunks)) as executor:
-            futures = {
-                executor.submit(
-                    _worker_process_frames,
-                    worker_id=i,
-                    topology=args.topology,
-                    trajectory=args.trajectory,
-                    wrapping=wrapping,
-                    unwrapping=unwrapping,
-                    frame_indices=chunk,
-                    disable_flags=disable_flags,
-                    atom_indices=atom_indices,
-                    db_path=db_path,
-                    log_file=args.log,
-                    file_logging_level=args.file_logging_level,
-                ): i
-                for i, chunk in enumerate(frame_chunks)
-            }
-            for future in as_completed(futures):
-                wid = futures[future]
-                _, n_done = future.result()
-                log.info("Worker %d finished (%d frames processed).", wid, n_done)
+        # Live-merge worker logs into the main log via a multiprocessing queue.
+        log_manager = multiprocessing.Manager()
+        log_queue = log_manager.Queue()
+        listener_handlers = list(logging.getLogger("pharmacon").handlers)
+        log_listener = QueueListener(log_queue, *listener_handlers, respect_handler_level=True)
+        log_listener.start()
+
+        try:
+            with ProcessPoolExecutor(max_workers=len(frame_chunks)) as executor:
+                futures = {
+                    executor.submit(
+                        _worker_process_frames,
+                        worker_id=i,
+                        topology=args.topology,
+                        trajectory=args.trajectory,
+                        wrapping=wrapping,
+                        unwrapping=unwrapping,
+                        frame_indices=chunk,
+                        disable_flags=disable_flags,
+                        atom_indices=atom_indices,
+                        db_path=db_path,
+                        log_queue=log_queue,
+                        file_logging_level=args.file_logging_level,
+                    ): i
+                    for i, chunk in enumerate(frame_chunks)
+                }
+                for future in as_completed(futures):
+                    wid = futures[future]
+                    _, n_done = future.result()
+                    log.info("Worker %d finished (%d frames processed).", wid, n_done)
+        finally:
+            log_listener.stop()
+            log_manager.shutdown()
 
         calc_end_time = time.time()
         calc_time = calc_end_time - calc_start_time
