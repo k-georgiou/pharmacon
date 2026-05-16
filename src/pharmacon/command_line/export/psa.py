@@ -126,9 +126,6 @@ def validate(args: argparse.Namespace) -> None:
                              required input data, invalid paths, unsupported
                              formats, or metadata inconsistencies in PSA files.
     """
-    from pharmacon.utils.fingerprint import create_pharmacon_signature
-    from pharmacon.utils.identifiers import validate_mda_artifact_token
-
     data: dict[str, object] = vars(args).copy()
 
     # Input file
@@ -171,145 +168,26 @@ def validate(args: argparse.Namespace) -> None:
 
     data["output"] = output_dir
 
-    # PSA file metadata integrity checks
-    try:
-        f = h5py.File(input_file, "r")
-    except Exception as exc:
-        raise ValidationError(f"Cannot open PSA file: {exc}") from exc
+    # PSA file metadata integrity checks (shared validator)
+    from pharmacon.utils.pta_validation import validate_pharmacon_file
 
-    try:
-        attrs = dict(f.attrs)
+    attrs = validate_pharmacon_file(input_file, expected_format="psa")
+    data["is_merged"] = (attrs.get("is_merged", "False") == "True")
 
-        # artifact_status must be SUCCESS
-        artifact_status = str(attrs.get("artifact_status", "")).strip().upper()
-        if not artifact_status:
+    # FASTA is sequence-only — reject if the file contains properties groups.
+    if fmt == "fasta":
+        with h5py.File(input_file, "r") as fh:
+            top_level_groups = {
+                key for key in fh if isinstance(fh[key], h5py.Group)
+            }
+        properties_present = top_level_groups & _PROPERTIES_GROUPS
+        if properties_present:
             raise ValidationError(
-                "PSA file is missing 'artifact_status' metadata — "
-                "the file may be incomplete or corrupted."
+                f"Format 'fasta' is not supported for PSA files containing "
+                f"properties groups (found: {sorted(properties_present)}). "
+                f"FASTA is a sequence-only format — use 'csv' or 'tsv' to "
+                f"export properties, or point '-i' at a sequence-only PSA file."
             )
-        if artifact_status != "SUCCESS":
-            raise ValidationError(
-                f"PSA file artifact_status is '{artifact_status}' (expected 'SUCCESS') — "
-                "the file may be corrupted or the analysis did not complete."
-            )
-
-        # artifact_token must be present and valid
-        artifact_token = str(attrs.get("artifact_token", "")).strip()
-        if not artifact_token:
-            raise ValidationError(
-                "PSA file is missing 'artifact_token' metadata — "
-                "the file may be corrupted."
-            )
-
-        blueprint = str(attrs.get("blueprint", "")).strip()
-        if not blueprint:
-            raise ValidationError(
-                "PSA file is missing 'blueprint' metadata — "
-                "the file may be corrupted."
-            )
-
-        token_valid = validate_mda_artifact_token(
-            artifact_token=artifact_token,
-            blueprint=blueprint,
-            secret="structure_analysis",
-            namespace="pharmacon",
-        )
-        if not token_valid:
-            raise ValidationError(
-                "PSA file artifact_token does not match the blueprint — "
-                "the file may have been tampered with or corrupted."
-            )
-
-        # signature / fingerprint must be present and consistent
-        signature = str(attrs.get("signature", "")).strip()
-        fingerprint = str(attrs.get("fingerprint", "")).strip()
-        command = str(attrs.get("command", "")).strip()
-        subcommand = str(attrs.get("subcommand", "")).strip()
-
-        if not signature or not fingerprint:
-            raise ValidationError(
-                "PSA file is missing 'signature' and/or 'fingerprint' metadata — "
-                "the file may be corrupted."
-            )
-
-        if command and subcommand:
-            expected_sig = create_pharmacon_signature(
-                format_name="psa",
-                command=command,
-                subcommand=subcommand,
-            )
-            if expected_sig.signature != signature:
-                raise ValidationError(
-                    f"PSA file signature mismatch.\n"
-                    f"  Expected : {expected_sig.signature}\n"
-                    f"  Found    : {signature}\n"
-                    "The file may have been tampered with or corrupted."
-                )
-            if expected_sig.fingerprint != fingerprint:
-                raise ValidationError(
-                    f"PSA file fingerprint mismatch.\n"
-                    f"  Expected : {expected_sig.fingerprint}\n"
-                    f"  Found    : {fingerprint}\n"
-                    "The file may have been tampered with or corrupted."
-                )
-
-        # pharmacon_version must be present
-        version = str(attrs.get("pharmacon_version", "")).strip()
-        if not version:
-            raise ValidationError(
-                "PSA file is missing 'pharmacon_version' metadata — "
-                "the file may be corrupted."
-            )
-
-        # version comparison
-        from pharmacon.constants import __version__
-        runtime_version = str(__version__)
-        try:
-            f_parts = tuple(map(int, version.split(".")))
-            r_parts = tuple(map(int, runtime_version.split(".")))
-            if f_parts > r_parts:
-                import warnings
-                warnings.warn(
-                    f"PSA file was created with Pharmacon v{version} "
-                    f"but the current runtime is v{runtime_version}. "
-                    "Some features may not be supported.",
-                    UserWarning,
-                    stacklevel=2,
-                )
-        except (ValueError, AttributeError):
-            pass
-
-        # is_merged
-        is_merged = str(attrs.get("is_merged", "False")).strip().lower() == "true"
-        data["is_merged"] = is_merged
-
-        # completed check on every top-level group
-        top_level_groups: set[str] = set()
-        for key in f:
-            obj = f[key]
-            if not isinstance(obj, h5py.Group):
-                continue
-            top_level_groups.add(key)
-            completed = str(obj.attrs.get("completed", "")).strip().lower()
-            if completed != "true":
-                raise ValidationError(
-                    f"Group '{key}' does not have completed=True — "
-                    f"the analysis for this group may not have finished."
-                )
-
-        # fasta is sequence-only: reject if properties are present
-        if fmt == "fasta":
-            properties_present = top_level_groups & _PROPERTIES_GROUPS
-            if properties_present:
-                raise ValidationError(
-                    f"Format 'fasta' is not supported for PSA files containing "
-                    f"properties groups (found: {sorted(properties_present)}). "
-                    f"FASTA is a sequence-only format — use 'csv' or 'tsv' to "
-                    f"export properties, or point '-i' at a sequence-only PSA file."
-                )
-
-    finally:
-        f.close()
 
     # Write validated values back into the namespace in-place.
     for key, value in data.items():

@@ -131,107 +131,34 @@ def build_parser(subparsers: argparse._SubParsersAction,  # type: ignore[type-ar
     return parser
 
 
-_REQUIRED_PTA_ATTRS: frozenset[str] = frozenset({
-    "command",
-    "subcommand",
-    "completed",
-    "artifact_status",
-    "artifact_status_code",
-    "blueprint",
-    "artifact_token",
-    "is_merged",
-})
-
-
 def _validate_pta_inputs(paths: list[Path]) -> None:
     """
     Validates the Pharmacon Trajectory Analysis (PTA) input files.
 
-    This function performs a comprehensive validation of the provided PTA input
-    files. It ensures that the files contain the required metadata, have
-    successful completions, and meet specific criteria, such as matching commands
-    and subcommands across all provided files. It also validates metadata
-    integrity using a token verification process.
+    Delegates per-file integrity checks (artifact status, token, signature,
+    fingerprint, version ordering, group completion) to the shared
+    :func:`validate_pharmacon_file` helper, then enforces merge-specific
+    cross-input invariants: every input must share the same command and
+    subcommand, and PCA analyses are not mergeable.
 
-    :param paths: A list of paths to the Pharmacon Trajectory Analysis input files
-                  to validate.
-    :type paths: list of Path
-    :raises ValidationError: If any input file is invalid, missing required
-                             metadata, improperly completed, contains mismatched
-                             commands or subcommands, has an invalid artifact
-                             status, or fails the token validation.
-    :return: None
+    :param paths: List of paths to the Pharmacon Trajectory Analysis input
+                  files to validate.
+    :raises ValidationError: On any per-file or cross-input failure.
     """
-    from pharmacon.fileio import PTAFile
-    from pharmacon.utils.identifiers import validate_mda_artifact_token
+    from pharmacon.utils.pta_validation import validate_pharmacon_file
 
     first_command: str | None = None
     first_subcommand: str | None = None
     first_path: Path | None = None
 
     for path in paths:
-        try:
-            pta = PTAFile(path, mode="r")
-            try:
-                attrs = {key: str(pta.file.attrs[key]) for key in pta.file.attrs.keys()}
-            finally:
-                pta.close()
-        except ValidationError:
-            raise
-        except Exception as exc:
-            raise ValidationError(
-                f"Could not open input '{path}' as a Pharmacon Trajectory Analysis file: {exc}"
-            ) from exc
-
-        missing = sorted(_REQUIRED_PTA_ATTRS - attrs.keys())
-        if missing:
-            raise ValidationError(
-                f"Input '{path}' is missing required metadata: {', '.join(missing)}."
-            )
-
-        completed = attrs["completed"].strip().lower()
-        if completed != "true":
-            raise ValidationError(
-                f"Input '{path}' did not complete successfully (completed={attrs['completed']!r})."
-            )
-
-        status = attrs["artifact_status"].strip().upper()
-        if status != "SUCCESS":
-            raise ValidationError(
-                f"Input '{path}' has artifact_status={attrs['artifact_status']!r}, expected 'SUCCESS'."
-            )
-
-        status_code_raw = attrs["artifact_status_code"].strip()
-        try:
-            status_code = int(status_code_raw)
-        except ValueError as exc:
-            raise ValidationError(
-                f"Input '{path}' has non-integer artifact_status_code={status_code_raw!r}."
-            ) from exc
-        if status_code != 0:
-            raise ValidationError(
-                f"Input '{path}' has artifact_status_code={status_code}, expected 0."
-            )
-
-        is_merged = attrs["is_merged"].strip().lower()
-        if is_merged == "true":
-            raise ValidationError(
-                f"Input '{path}' is already a merged file (is_merged=True); refusing to re-merge."
-            )
-
-        token_valid = validate_mda_artifact_token(
-            artifact_token=attrs["artifact_token"],
-            blueprint=attrs["blueprint"],
-            secret="trajectory_analysis",
-            namespace="pharmacon",
+        # Per-file checks: shared validator (refuses already-merged inputs).
+        attrs = validate_pharmacon_file(
+            path, expected_format="pta", allow_merged=False,
         )
-        if not token_valid:
-            raise ValidationError(
-                f"Input '{path}' has an invalid artifact token; file may be tampered or foreign."
-            )
 
-        command = attrs["command"]
-        subcommand = attrs["subcommand"]
+        command = attrs.get("command", "")
+        subcommand = attrs.get("subcommand", "")
 
         if subcommand.strip().lower() == "pca":
             raise ValidationError(
