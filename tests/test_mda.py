@@ -386,9 +386,13 @@ class TestCreateUniverse:
         u, elements = create_universe(str(TPR_FILE), add_elements=True)
         assert len(elements) == u.atoms.n_atoms
         assert all(isinstance(e, str) for e in elements)
-        # no "X" should remain for a well-formed TPR
-        x_count = sum(1 for e in elements if e == "X")
-        assert x_count == 0, f"Found {x_count} 'X' elements"
+        # Real atoms (mass > 0) must all be assigned; virtual sites (e.g. TIP4P MW) may be "X".
+        bad = [
+            (i, elements[i])
+            for i, m in enumerate(u.atoms.masses)
+            if m > 0 and elements[i] == "X"
+        ]
+        assert not bad, f"Real atoms with unguessed element: {bad[:10]}"
 
     def test_with_elements_and_trajectory(self):
         u, elements = create_universe(str(TPR_FILE), str(XTC_FILE), add_elements=True)
