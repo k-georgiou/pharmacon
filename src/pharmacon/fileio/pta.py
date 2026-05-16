@@ -22,7 +22,6 @@ from collections import defaultdict
 from typing import Union, Iterable, Tuple, Final, List, Dict, Counter
 
 from .base import PharmaconHDF5File
-from pharmacon.analyzer.interactions import extract_mode_key
 from pharmacon.logger import get_logger, PharmaconLogger
 
 
@@ -500,6 +499,9 @@ class PharmaconPTAFile(PharmaconHDF5File):
         DESCRIPTION_MODE3: Final[str] = (
             "Hybrid interactions analysis data (hydrophobic once-per-frame; others count all occurrences)"
         )
+
+        # Lazy import: keep MDAnalysis-heavy analyzer module out of fileio's import path
+        from pharmacon.analyzer.interactions import extract_mode_key
 
         if not self.group_exists(group_name):
             raise ValueError(f"Group '{group_name}' does not exist")

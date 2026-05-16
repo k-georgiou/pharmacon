@@ -4,14 +4,18 @@ Utility module to support generation and manipulation of timestamps, UUIDs, hash
 and secure tokens.
 """
 
+from __future__ import annotations
+
 import json
 import hmac
 import base64
 import hashlib
-import MDAnalysis
 import numpy as np
-from typing import Any, Dict, Union
+from typing import TYPE_CHECKING, Any, Dict, Union
 from collections import Counter
+
+if TYPE_CHECKING:
+    import MDAnalysis
 
 
 

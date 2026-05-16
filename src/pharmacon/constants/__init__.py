@@ -15,23 +15,42 @@ from .smarts import (AA3, AA3_to_AA1, NA_RES, WATER_RESIDUES, ION_RES_TO_ELT,
                      NEGATIVELY_CHARGED_PATTERNS, POSITIVELY_CHARGED_PATTERNS,
                      METAL_ELEMENTS, HALOGEN_PATTERNS, HALOGEN_ELEMENTS
                      )
-from .plots import (ProteinLigandInteractionsStackedColumn1PlotSettings as PLIStackedSettings1,
-                    ProteinLigandInteractionsStackedColumn2PlotSettings as PLIStackedSettings2,
-                    ProteinLigandInteractionsHeatmap1PlotSettings as PLIHeatmapSettings1,
-                    ProteinLigandInteractionsHeatmap2PlotSettings as PLIHeatmapSettings2,
-                    ProteinLigandInteractionsPieCharts1PlotSettings as PLIPieChartsSettings1,
-                    ProteinLigandInteractionsLigandMonitorSettings as PLILigandMonitorSettings,
-                    ProteinProteinInteractionsTimelinePairs as PPITimelinePairsSettings,
-                    ProteinProteinInteractionsHeatmap as PPIHeatmapSettings,
-                    ProteinProteinInteractionsStackedColumnSettings as PPIStackedColumnSettings,
-                    PlotUniversalSettings,
-                    PCAPlotTimeSeriesSettings,
-                    PCAPlotScatterSettings,
-                    PCAPlotVarianceRatioSettings,
-                    PCAPlotFESHeatmapSettings,
-                    PCAPlotProbabilityHeatmapSettings,
-                    PlotSettingsBase,
-                    )
+
+# Plot setting classes are exposed lazily via PEP 562 __getattr__ so that
+# importing pharmacon.constants (for __version__, BASE_PHARMACON_META, etc.)
+# does not pull in the full plots subpackage.
+# Mapping: public name on pharmacon.constants -> real attribute on pharmacon.constants.plots
+_LAZY_PLOTS: Final[dict] = {
+    "PLIStackedSettings1": "ProteinLigandInteractionsStackedColumn1PlotSettings",
+    "PLIStackedSettings2": "ProteinLigandInteractionsStackedColumn2PlotSettings",
+    "PLIHeatmapSettings1": "ProteinLigandInteractionsHeatmap1PlotSettings",
+    "PLIHeatmapSettings2": "ProteinLigandInteractionsHeatmap2PlotSettings",
+    "PLIPieChartsSettings1": "ProteinLigandInteractionsPieCharts1PlotSettings",
+    "PLILigandMonitorSettings": "ProteinLigandInteractionsLigandMonitorSettings",
+    "PPITimelinePairsSettings": "ProteinProteinInteractionsTimelinePairs",
+    "PPIHeatmapSettings": "ProteinProteinInteractionsHeatmap",
+    "PPIStackedColumnSettings": "ProteinProteinInteractionsStackedColumnSettings",
+    "PlotUniversalSettings": "PlotUniversalSettings",
+    "PCAPlotTimeSeriesSettings": "PCAPlotTimeSeriesSettings",
+    "PCAPlotScatterSettings": "PCAPlotScatterSettings",
+    "PCAPlotVarianceRatioSettings": "PCAPlotVarianceRatioSettings",
+    "PCAPlotFESHeatmapSettings": "PCAPlotFESHeatmapSettings",
+    "PCAPlotProbabilityHeatmapSettings": "PCAPlotProbabilityHeatmapSettings",
+    "PlotSettingsBase": "PlotSettingsBase",
+}
+
+
+def __getattr__(name):
+    if name in _LAZY_PLOTS:
+        from . import plots as _plots
+        value = getattr(_plots, _LAZY_PLOTS[name])
+        globals()[name] = value  # cache for subsequent lookups
+        return value
+    raise AttributeError(f"module 'pharmacon.constants' has no attribute {name!r}")
+
+
+def __dir__():
+    return sorted(list(globals().keys()) + list(_LAZY_PLOTS.keys()))
 
 
 __version__: Final[str]     = "1.0.0"

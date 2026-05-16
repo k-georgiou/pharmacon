@@ -31,6 +31,22 @@ from pharmacon.constants import (PLIStackedSettings1,  PLIStackedSettings2, PLIH
                                  AA3_to_AA1)
 
 
+# Canonical bottom->top stack order for PLI stacked-column plots.
+# Labels are the normalized lowercase forms produced by `norm_interaction`
+# inside the build_pli_* functions.
+_PLI_STACK_ORDER: Final[Tuple[str, ...]] = (
+    "hydrophobic",
+    "hydrogen_bonds",
+    "pi_cation",
+    "pi_stacking",
+    "water_bridge",
+    "ionic",
+    "halogen",
+    "metal_contact",
+)
+_PLI_STACK_RANK: Final[Dict[str, int]] = {k: i for i, k in enumerate(_PLI_STACK_ORDER)}
+
+
 
 
 
@@ -2182,6 +2198,9 @@ def build_pli_merged_stacked_data(pta_file, *, group_name: str, mode_name: str, 
             if ikey not in interactions:
                 interactions.append(ikey)
 
+    # Sort into canonical bottom->top order; unknown labels go to the end (stable).
+    interactions.sort(key=lambda k: (_PLI_STACK_RANK.get(k, len(_PLI_STACK_ORDER)), k))
+
     values = np.zeros((len(ordered_residues), len(interactions)))
     errors = np.zeros_like(values)
 
@@ -2297,6 +2316,9 @@ def build_pli_normal_data(pta_file, *, group_name: str, mode_name: str, threshol
         for ikey in v.keys():
             if ikey not in interactions:
                 interactions.append(ikey)
+
+    # Sort into canonical bottom->top order; unknown labels go to the end (stable).
+    interactions.sort(key=lambda k: (_PLI_STACK_RANK.get(k, len(_PLI_STACK_ORDER)), k))
 
     values = np.zeros((len(ordered_residues), len(interactions)))
 
