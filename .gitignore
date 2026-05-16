@@ -159,7 +159,10 @@ resources/*.original.png
 # tests/ should contain only Python sources. Any subdirectory under tests/
 # is assumed to be local user data unless it's an allowed helper directory.
 tests/*/
-!tests/__pycache__/   # already ignored above; harmless re-allow gets re-blocked
+# tests/__pycache__/ already ignored above; harmless re-allow gets re-blocked
+!tests/__pycache__/
+# Curated mock-data builders used by test modules.
+!tests/helpers/
 # (Add `!tests/fixtures/` here if a curated, small fixtures directory is introduced.)
 
 # ---- Workspace / temp ----

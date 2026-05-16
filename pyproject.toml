@@ -88,6 +88,9 @@ filterwarnings = [
     # MDAnalysis: expected when tests intentionally create empty (0-atom) universes
     "ignore:Can not guess attributes for universe with 0 atoms:UserWarning",
 ]
+markers = [
+    "slow: tests that render plots via matplotlib (skip with `pytest -m 'not slow'`)",
+]
 
 [tool.mypy]
 python_version = "3.12"
