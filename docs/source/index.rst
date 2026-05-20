@@ -59,6 +59,7 @@ artifacts, and producing publication-ready plots.
 
    architecture
    analyzer
+   pbc
    file_formats
    plot_configuration
    logging

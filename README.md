@@ -53,6 +53,7 @@
   - [Average Structure](#average-structure)
   - [Sequence Extraction](#sequence-extraction)
   - [Molecular Properties](#molecular-properties)
+- [Periodic Boundary Conditions (PBC)](#periodic-boundary-conditions-pbc)
 - [File Formats](#file-formats)
   - [Pharmacon Trajectory Analysis (`.pta`)](#pharmacon-trajectory-analysis-pta)
   - [Pharmacon Structure Analysis (`.psa`)](#pharmacon-structure-analysis-psa)
@@ -418,6 +419,174 @@ rotatable bond count, ring count, aromaticity, stereocenter count, net charge,
 element composition, molecular volume, and fragment counts. Also generates
 molecular fingerprints (Morgan/ECFP, topological torsion, atom pair, MACCS
 keys) for similarity searching and machine-learning applications.
+</p>
+
+---
+
+## Periodic Boundary Conditions (PBC)
+
+<p align="justify">
+Most MD engines write trajectories in which solute molecules diffuse across the
+edges of the simulation box, get wrapped back through the opposite face, or
+end up split between periodic images. Distances, angles, and contacts measured
+on such raw frames are physically meaningless unless the box geometry is taken
+into account. Pharmacon handles this in two complementary ways: <b>geometry-aware
+calculations</b> that consult the box at every frame, and an <b>opt-in
+transformation pipeline</b> that rewrites coordinates before the analysis sees
+them.
+</p>
+
+### PBC-aware calculations
+
+<p align="justify">
+The trajectory analyzers that measure geometric quantities — <code>distances</code>,
+<code>angles</code>, <code>h-bonds</code>, <code>pl-interactions</code>,
+<code>pp-interactions</code> — read the per-frame unit-cell dimensions from the
+trajectory and use the <b>minimum-image convention</b> when box information is
+available. Concretely, this means a hydrogen-bond donor in the primary image
+and an acceptor in a neighbouring image are still detected as a single contact
+at the correct distance, without any user intervention.
+</p>
+
+<p align="justify">
+If the trajectory has no box dimensions (e.g. a stripped <code>.dcd</code> or a
+gas-phase run), Pharmacon falls back to plain Euclidean geometry and logs the
+fact at <code>DEBUG</code> level.
+</p>
+
+### The `-at / --add-transformations` flag
+
+<p align="justify">
+PBC-aware distances handle the <i>measurement</i> side, but they cannot help
+when a molecule is visually broken across box faces (e.g. a protein straddling
+the box boundary), when downstream tools require whole molecules
+(RDKit SMARTS matching, RMSD fitting, average-structure export), or when the
+ligand drifts out of the protein's primary image. For these cases every
+trajectory subcommand that consumes coordinates accepts:
+</p>
+
+```
+-at, --add-transformations    Apply PBC unwrapping transformations to the
+                              MDAnalysis Universe before analysis.
+                              (default: False)
+```
+
+<p align="justify">
+When the flag is set, Pharmacon attaches an <b>on-the-fly transformation
+pipeline</b> to the MDAnalysis <code>Universe</code> in
+<code>pharmacon.utils.mda.create_universe()</code>. The pipeline is built and
+applied in a fixed order:
+</p>
+
+1. **`unwrap`** — `MDAnalysis.transformations.unwrap(u.atoms)`. Makes every
+   molecule whole by reversing the wrapping that the MD engine applied on
+   write. Required before any per-molecule operation (RMSD fit, COM/COG
+   distance, SMARTS perception).
+2. **`center_in_box`** — `center_in_box(ref, center="geometry")`. Re-centers
+   the system on the geometric centre of the protein (falling back to all
+   atoms if no `protein` selection exists). This keeps the receptor stationary
+   in the primary image and prevents it from drifting toward a box face over
+   long simulations.
+3. **`wrap`** — `MDAnalysis.transformations.wrap(u.atoms, compound="atoms")`.
+   After unwrapping and centering, wraps everything back into the primary
+   image so that downstream distance/contact searches stay numerically
+   well-behaved.
+
+<p align="justify">
+The transformations are <b>lazy</b>: they are attached once to
+<code>u.trajectory</code> and re-evaluated on every frame iteration, so memory
+usage stays flat regardless of trajectory length. If the pipeline cannot be
+applied (e.g. missing bond topology required by <code>unwrap</code>),
+Pharmacon logs a warning and continues with the untransformed trajectory
+rather than aborting the run — the flag is treated as a convenience, not a
+hard requirement.
+</p>
+
+### When to enable `--add-transformations`
+
+| Situation                                                            | Recommendation |
+|----------------------------------------------------------------------|----------------|
+| Trajectory already imaged / centered by the MD engine                | Leave **off** (default) |
+| Protein visibly split across box edges in the input trajectory       | Enable          |
+| Ligand drifts out of the primary box during a long run               | Enable          |
+| RMSD / PCA / average-structure on a periodic system                  | Enable          |
+| Protein–ligand or protein–protein interactions with periodic ligands | Enable          |
+| Box dimensions are missing from the trajectory                       | Has no effect — pipeline is silently skipped |
+
+<p align="justify">
+The flag is <i>idempotent</i> on already-imaged trajectories: re-running with
+<code>-at</code> on a clean trajectory simply re-applies the same identity
+pass and produces the same results.
+</p>
+
+### Recommended: pre-image the trajectory yourself
+
+<p align="justify">
+The on-the-fly <code>unwrap → center → wrap</code> pipeline runs on
+<b>every</b> frame iteration, every time you launch an analysis. On long
+trajectories or workflows that touch the same trajectory repeatedly (RMSD,
+PCA, then PL-interactions, then H-bonds, …) this overhead is paid over and
+over again and can <b>heavily affect calculation speed</b> — sometimes
+dominating the total runtime.
+</p>
+
+<p align="justify">
+For best performance we <b>strongly recommend pre-processing the trajectory
+once with your MD engine's native tooling</b> and then feeding the cleaned-up
+trajectory to Pharmacon <i>without</i> <code>-at</code>. Native tools are
+implemented in C/Fortran, operate frame-by-frame in a single streaming pass,
+and write the result to disk so the cost is paid exactly once.
+</p>
+
+Examples of native equivalents:
+
+- **GROMACS** — `gmx trjconv -pbc whole`, then `gmx trjconv -center -pbc mol -ur compact` (or `-pbc nojump` for unwrapped trajectories).
+- **Amber / cpptraj** — `autoimage` followed by `center` and `image familiar`.
+- **CHARMM / NAMD (VMD)** — the `pbctools` plugin: `pbc unwrap`, `pbc wrap -center com -centersel "protein" -compound res`.
+- **MDAnalysis (Python)** — write a short script that mirrors the same
+  `unwrap → center_in_box → wrap` chain and dumps the result with a
+  `MDAnalysis.coordinates.XTC.XTCWriter`.
+
+<p align="justify">
+That said, if you're not sure how to do this with your engine of choice
+<b>it is perfectly fine to just pass <code>-at</code></b> and let Pharmacon
+handle it for you — the result is numerically identical, you just have to
+wait a bit longer for the analysis to finish. The flag exists exactly for
+this case.
+</p>
+
+### Subcommands that accept `-at`
+
+<p align="justify">
+The flag is exposed on every trajectory subcommand whose output depends on
+coordinate geometry:
+</p>
+
+- `pharmacon trajectory rmsd`
+- `pharmacon trajectory distances`
+- `pharmacon trajectory angles`
+- `pharmacon trajectory h-bonds`
+- `pharmacon trajectory pl-interactions`
+- `pharmacon trajectory pp-interactions`
+- `pharmacon trajectory pca`
+- `pharmacon trajectory average-st`
+
+Example:
+
+```bash
+pharmacon trajectory pl-interactions \
+    -p out.dms -x out.xtc -o pli.pta \
+    -prt "chainid R" -lig "resname LIG" \
+    -w "resname T3P and around 5 resname LIG" \
+    --add-transformations \
+    --workers 10
+```
+
+<p align="justify">
+The <code>add_transformations</code> setting is persisted in the resulting
+<code>.pta</code> file's root-level metadata, so a downstream consumer can
+verify which PBC treatment a given artifact was produced under without
+re-reading the original trajectory.
 </p>
 
 ---
