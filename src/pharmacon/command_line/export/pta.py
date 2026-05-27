@@ -61,6 +61,10 @@ _RMSD_GROUPS = frozenset({
     "rmsd",
 })
 
+_RMSF_GROUPS = frozenset({
+    "rmsf",
+})
+
 _PCA_GROUPS = frozenset({
     "pca",
 })
@@ -407,6 +411,36 @@ def run(args: argparse.Namespace) -> None:
                     pta.write_rmsd_statistics_to_csv(out_stats, group_name=group_name)
                 else:
                     pta.write_rmsd_statistics_to_tsv(out_stats, group_name=group_name)
+                console.print(f"  [green]Written:[/green] {out_stats}")
+                exported.append(str(out_stats))
+
+        # RMSF groups
+        for group_name in sorted(groups):
+            if group_name not in _RMSF_GROUPS:
+                continue
+
+            subheader(f"Exporting: {group_name}")
+
+            out_path = output_dir / f"{group_name}{ext}"
+            _check_overwrite(out_path, args.overwrite)
+
+            if fmt == "csv":
+                pta.write_rmsf_data_to_csv(out_path, group_name=group_name, is_merged=is_merged)
+            else:
+                pta.write_rmsf_data_to_tsv(out_path, group_name=group_name, is_merged=is_merged)
+            console.print(f"  [green]Written:[/green] {out_path}")
+            exported.append(str(out_path))
+
+            # RMSF statistics (absent in merged files — decision 2a)
+            stats_path = f"{group_name}/statistics"
+            if stats_path in pta:
+                out_stats = output_dir / f"{group_name}_statistics{ext}"
+                _check_overwrite(out_stats, args.overwrite)
+
+                if fmt == "csv":
+                    pta.write_rmsf_statistics_to_csv(out_stats, group_name=group_name)
+                else:
+                    pta.write_rmsf_statistics_to_tsv(out_stats, group_name=group_name)
                 console.print(f"  [green]Written:[/green] {out_stats}")
                 exported.append(str(out_stats))
 
