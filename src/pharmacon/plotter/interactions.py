@@ -13,6 +13,12 @@ import numpy as np
 from pathlib import Path
 import matplotlib.pyplot as plt
 
+# Make text in SVG/PDF outputs remain editable in Illustrator/Inkscape
+# (real <text> elements / TrueType) rather than outlined to paths. Affects
+# every savefig in this module; raster formats ignore these rcParams.
+plt.rcParams["svg.fonttype"] = "none"
+plt.rcParams["pdf.fonttype"] = 42
+
 import ast
 from typing import Dict, Tuple
 

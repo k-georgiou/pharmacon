@@ -30,6 +30,7 @@ from .ppi import (
     ProteinProteinInteractionsStackedColumnSettings,
 )
 from .universal import PlotUniversalSettings
+from .rmsf import RMSFPlotSettings
 from .pca import (
     PCAPlotTimeSeriesSettings,
     PCAPlotScatterSettings,
@@ -57,6 +58,7 @@ __all__ = [
     "ProteinProteinInteractionsHeatmap",
     "ProteinProteinInteractionsStackedColumnSettings",
     "PlotUniversalSettings",
+    "RMSFPlotSettings",
     "PCAPlotTimeSeriesSettings",
     "PCAPlotScatterSettings",
     "PCAPlotVarianceRatioSettings",

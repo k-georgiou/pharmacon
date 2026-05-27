@@ -38,6 +38,7 @@ _INTERACTION_GROUPS = frozenset({"pl_interactions", "pp_interactions", "hbonds"}
 _DISTANCE_GROUPS = frozenset({"distances"})
 _ANGLE_GROUPS = frozenset({"angles"})
 _RMSD_GROUPS = frozenset({"rmsd"})
+_RMSF_GROUPS = frozenset({"rmsf"})
 _PCA_GROUPS = frozenset({"pca"})
 
 _INI_SUFFIXES = frozenset({".ini", ".inp", ".conf"})
@@ -292,6 +293,7 @@ def run(args: argparse.Namespace) -> None:
                                            PCAPlotVarianceRatioSettings,
                                            PlotSettingsBase,
                                            PlotUniversalSettings,
+                                           RMSFPlotSettings,
                                            ProteinLigandInteractionsHeatmap1PlotSettings,
                                            ProteinLigandInteractionsHeatmap2PlotSettings,
                                            ProteinLigandInteractionsLigandMonitorSettings,
@@ -320,6 +322,7 @@ def run(args: argparse.Namespace) -> None:
                                              plot_pca_scatter_from_file,
                                              plot_pca_timeseries_from_file,
                                              plot_pca_variance_ratio_from_file,
+                                             plot_pta_rmsf_from_file,
                                              plot_pta_timeseries_from_file,
                                              )
 
@@ -449,6 +452,27 @@ def run(args: argparse.Namespace) -> None:
             _invoke(
                 f"{group_name}/timeseries",
                 plot_pta_timeseries_from_file,
+                pta_file=pta,
+                group_name=group_name,
+                settings=settings,
+                out_dir=output_dir,
+                is_merged=is_merged,
+            )
+
+        # RMSF (per-atom profile, no frame axis)
+        for group_name in sorted(groups):
+            if group_name not in _RMSF_GROUPS:
+                continue
+
+            subheader(f"Plotting: {group_name}")
+
+            settings = _settings_for(RMSFPlotSettings)
+            if settings is None:
+                continue
+
+            _invoke(
+                f"{group_name}/profile",
+                plot_pta_rmsf_from_file,
                 pta_file=pta,
                 group_name=group_name,
                 settings=settings,

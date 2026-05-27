@@ -1,8 +1,10 @@
 """Pharmacon — Molecular Dynamics Suite, developed by Kyriakos Georgiou, 2026.
 
-Universal PTA time-series plot settings used for RMSD, RMSF, Rg, SASA,
-hydrogen-bond counts, salt-bridge counts, and any other per-frame scalar
-quantity.
+Universal PTA time-series plot settings used for RMSD, angles, distances
+(and any other per-frame scalar dataset stored under ``/<group>/frame_<N>``).
+
+For per-atom data with no frame axis, see
+:class:`pharmacon.constants.plots.rmsf.RMSFPlotSettings`.
 """
 import re
 

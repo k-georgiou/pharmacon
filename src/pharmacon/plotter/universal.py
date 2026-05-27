@@ -16,7 +16,8 @@ from scipy.ndimage import gaussian_filter, minimum_filter
 
 
 from pharmacon.logger import get_logger, PharmaconLogger
-from pharmacon.constants.plots import (PlotUniversalSettings, PCAPlotTimeSeriesSettings, PCAPlotScatterSettings,
+from pharmacon.constants.plots import (PlotUniversalSettings, RMSFPlotSettings,
+                                       PCAPlotTimeSeriesSettings, PCAPlotScatterSettings,
                                        PCAPlotVarianceRatioSettings, PCAPlotProbabilityHeatmapSettings,
                                        PCAPlotFESHeatmapSettings)
 
@@ -26,6 +27,7 @@ from pharmacon.constants.plots import (PlotUniversalSettings, PCAPlotTimeSeriesS
 __all__ = [
     "logger",
     "plot_pta_timeseries_from_file",
+    "plot_pta_rmsf_from_file",
     "plot_pca_timeseries_from_file",
     "plot_pca_scatter_from_file",
     "plot_pca_variance_ratio_from_file",
@@ -36,6 +38,13 @@ __all__ = [
 
 
 warnings.filterwarnings("ignore")
+
+
+# Make text in SVG/PDF outputs remain editable in Illustrator/Inkscape
+# (real <text> elements / TrueType) rather than outlined to paths. Affects
+# every savefig in this module; raster formats ignore these rcParams.
+plt.rcParams["svg.fonttype"] = "none"
+plt.rcParams["pdf.fonttype"] = 42
 
 
 logger: PharmaconLogger = get_logger(__name__)
@@ -303,6 +312,291 @@ def plot_pta_timeseries_from_file(pta_file,
         plt.close(fig)
 
         logger.info(f"Saved PTA plot → {out_path}")
+
+    keys = sorted(data.keys())
+
+    if settings.plot_multiple:
+        for k in keys:
+            safe = "".join(ch if ch.isalnum() or ch in ("-", "_", ".") else "_" for ch in k)[:120]
+            _plot([k], suffix=f"_{safe}")
+    else:
+        _plot(keys, suffix="")
+
+
+def plot_pta_rmsf_from_file(pta_file,
+                            *,
+                            group_name: str = "rmsf",
+                            settings: RMSFPlotSettings,
+                            out_dir: Path,
+                            is_merged: bool = False
+                            ) -> None:
+    """
+    Render per-atom RMSF profiles, one curve per selection.
+
+    Unlike :func:`plot_pta_timeseries_from_file`, this plotter operates on
+    the per-selection layout produced by the ``trajectory rmsf`` subcommand:
+    there is no frame axis. Each selection's records are read from
+    ``/<group>/selection_<label>/atoms``.
+
+    STORAGE (non-merged):
+      /<group>/selection_<label>/atoms -> rows:
+        {atom_index, resid, resname, atom_name, rmsf}
+
+    STORAGE (merged):
+      /<group>/selection_<label>/atoms -> rows:
+        {atom_index, resid, resname, atom_name, mean, std, n}
+
+    :param pta_file: Open PTA file handle.
+    :param group_name: HDF5 group containing RMSF data (default ``"rmsf"``).
+    :param settings: :class:`RMSFPlotSettings` with figure/font/line options.
+    :param out_dir: Directory to write the plot into.
+    :param is_merged: ``True`` if the PTA file was produced by
+        ``merge results`` (records carry ``mean``/``std`` instead of
+        ``rmsf``).
+    :return: None
+    """
+    logger.debug(
+        "plot_pta_rmsf_from_file: group='%s' is_merged=%s out_dir='%s'",
+        group_name, is_merged, out_dir,
+    )
+    settings.validate()
+
+    if group_name not in pta_file.file:
+        raise ValueError(f"Group '{group_name}' not found in PTA file.")
+
+    x_axis = getattr(settings, "x_axis", "resid")
+    logger.debug("x_axis='%s' plot_multiple=%s is_merged=%s",
+                 x_axis, settings.plot_multiple, is_merged)
+
+    # Per-label container:
+    #   "x":         list[float]     – x-axis values
+    #   "y":         list[float]     – RMSF values (or merged mean)
+    #   "std":       list[float]|None
+    #   "atom_info": list[dict]      – per-row {atom_index, resid, resname,
+    #                                  atom_name, position} for xtick label formatting
+    data: dict[str, dict[str, list]] = {}
+
+    labels = list(pta_file._iter_selections(group_name))
+    if not labels:
+        raise ValueError(f"No RMSF selections found under group '{group_name}'.")
+    logger.debug("Discovered %d selection(s) under '%s'", len(labels), group_name)
+
+    rows_total = 0
+    for label in labels:
+        dset_path = f"{group_name}/selection_{label}/atoms"
+        if dset_path not in pta_file.file:
+            logger.trace("Missing dataset '{}' for selection {}",
+                         dset_path, label)
+            continue
+        dset = pta_file.file[dset_path]
+
+        xs: list = []
+        ys: list = []
+        stds: list = []
+        atom_info: list[dict] = []
+
+        for idx, row in enumerate(dset):
+            rec = json.loads(row)
+            rows_total += 1
+
+            # x value depends on requested axis
+            if x_axis == "resid":
+                x_val = float(rec.get("resid", 0))
+            elif x_axis == "atom_index":
+                x_val = float(rec.get("atom_index", 0))
+            else:  # "position" or "atom_name" (both place atoms at 0..N-1)
+                x_val = float(idx)
+
+            # y value: merged records carry "mean" (+ "std"); non-merged carry "rmsf"
+            if is_merged:
+                y_val = float(rec.get("mean", 0.0))
+                s_val = float(rec.get("std", 0.0))
+                stds.append(s_val)
+            else:
+                y_val = float(rec.get("rmsf", 0.0))
+
+            xs.append(x_val)
+            ys.append(y_val)
+            atom_info.append({
+                "atom_index": rec.get("atom_index", idx),
+                "resid":      rec.get("resid", 0),
+                "resname":    rec.get("resname", ""),
+                "atom_name":  rec.get("atom_name", ""),
+                "position":   idx,
+            })
+
+        if not xs:
+            continue
+
+        data[label] = {
+            "x": xs, "y": ys,
+            "std": stds if is_merged else None,
+            "atom_info": atom_info,
+        }
+
+    if not data:
+        raise ValueError("No RMSF data collected (empty after filtering).")
+
+    logger.debug("Collected %d row(s) across %d selection(s)",
+                 rows_total, len(data))
+
+    # Resolve the effective xtick label template:
+    #   - explicit `xtick_format` always wins
+    #   - else x_axis=atom_name → "{atom_name}" as a sensible default
+    #   - else "" → matplotlib's automatic numeric ticks
+    effective_format = settings.xtick_format
+    if not effective_format and x_axis == "atom_name":
+        effective_format = "{atom_name}"
+
+    def _plot(plot_labels: list[str], suffix: str = "") -> None:
+        fig, ax = plt.subplots(
+            figsize=(settings.fig_size_width, settings.fig_size_height),
+            dpi=settings.fig_dpi,
+            facecolor=settings.bg_color,
+        )
+        plt.rcParams["font.family"] = settings.font_family
+
+        n_colors = max(1, len(settings.line_colors))
+
+        # Shaded background regions. Drawn first so they sit behind everything
+        # else; zorder is set explicitly because tight_layout / fill_between
+        # can otherwise reshuffle layering.
+        shading_regions = getattr(settings, "shading_regions", []) or []
+        for region in shading_regions:
+            ax.axvspan(
+                region["start"], region["end"],
+                color=region["color"],
+                alpha=region["alpha"],
+                label=region["label"] if settings.shading_show_legend else None,
+                zorder=0,
+                linewidth=0,
+            )
+
+        # For custom xtick labels we need the per-atom info, sorted by x;
+        # collect it from the first plotted label (or union over labels if
+        # overlay mode). In practice atom_name labels are used with a single
+        # selection (one ligand, one fragment) — we use the first label as the
+        # source-of-truth and assume other overlaid selections share positions.
+        tick_positions: list[float] = []
+        tick_labels: list[str] = []
+
+        colors_by_label = getattr(settings, "colors_by_label_map", {}) or {}
+
+        for i, label in enumerate(plot_labels):
+            content = data[label]
+            x = np.asarray(content["x"], dtype=float)
+            y = np.asarray(content["y"], dtype=float)
+            info = content["atom_info"]
+
+            order = np.argsort(x, kind="stable")
+            x_sorted = x[order]
+            y_sorted = y[order]
+
+            # Per-label override wins; otherwise fall back to the cycling palette.
+            if label in colors_by_label:
+                color = colors_by_label[label]
+            else:
+                color = settings.line_colors[(i % n_colors) if settings.cycle_colors else 0]
+
+            ax.plot(
+                x_sorted, y_sorted,
+                color=color,
+                linewidth=settings.line_width,
+                alpha=settings.line_alpha,
+                linestyle=settings.line_style,
+                label=label,
+            )
+
+            if is_merged and settings.show_std_band and content["std"] is not None:
+                std = np.asarray(content["std"], dtype=float)[order]
+                ax.fill_between(
+                    x_sorted, y_sorted - std, y_sorted + std,
+                    color=color,
+                    alpha=settings.std_band_alpha,
+                    linewidth=0,
+                )
+
+            # Build tick metadata from the first selection only.
+            if i == 0 and effective_format:
+                info_sorted = [info[int(j)] for j in order]
+                tick_positions = [float(x_sorted[k]) for k in range(len(x_sorted))]
+                tick_labels = []
+                for rec_info in info_sorted:
+                    try:
+                        tick_labels.append(effective_format.format(**rec_info))
+                    except Exception:
+                        # Fallback if format misbehaves on a specific row.
+                        tick_labels.append(str(rec_info.get("atom_name", "")))
+
+        if not settings.disable_title:
+            ax.set_title(
+                settings.fig_title,
+                fontsize=settings.font_size_title,
+                fontweight=settings.font_weight_title,
+            )
+
+        ax.set_xlabel(settings.x_label,
+                      fontsize=settings.font_size_label,
+                      fontweight=settings.font_weight_label)
+        ax.set_ylabel(settings.y_label,
+                      fontsize=settings.font_size_label,
+                      fontweight=settings.font_weight_label)
+        ax.tick_params(labelsize=settings.font_size_ticks)
+
+        # Apply custom xtick labels if a template is in effect.
+        if effective_format and tick_positions:
+            n_ticks = len(tick_positions)
+            max_labels = max(1, int(settings.xtick_max_labels))
+            if n_ticks > max_labels:
+                stride = max(1, n_ticks // max_labels)
+                tick_positions = tick_positions[::stride]
+                tick_labels = tick_labels[::stride]
+                logger.debug(
+                    "Thinning xtick labels: %d → %d (stride=%d)",
+                    n_ticks, len(tick_positions), stride,
+                )
+
+            if settings.xtick_rotation == "auto":
+                rotation = 90.0 if len(tick_labels) > 20 else 0.0
+            else:
+                rotation = float(settings.xtick_rotation)
+
+            ax.set_xticks(tick_positions)
+            ax.set_xticklabels(
+                tick_labels,
+                rotation=rotation,
+                ha=("right" if 0 < rotation < 180 else "center"),
+            )
+
+        if settings.enable_grid:
+            ax.grid(True, linestyle=settings.grid_style, alpha=settings.grid_alpha)
+
+        # Axis limits ("auto" leaves matplotlib's autoscaling untouched).
+        cur_xmin, cur_xmax = ax.get_xlim()
+        cur_ymin, cur_ymax = ax.get_ylim()
+        new_xmin = settings.x_min if settings.x_min != "auto" else cur_xmin
+        new_xmax = settings.x_max if settings.x_max != "auto" else cur_xmax
+        new_ymin = settings.y_min if settings.y_min != "auto" else cur_ymin
+        new_ymax = settings.y_max if settings.y_max != "auto" else cur_ymax
+        ax.set_xlim(new_xmin, new_xmax)
+        ax.set_ylim(new_ymin, new_ymax)
+
+        if not settings.disable_legend:
+            ax.legend(
+                fontsize=settings.font_size_legend,
+                frameon=settings.legend_frame,
+                framealpha=settings.legend_alpha,
+            )
+
+        if settings.tight_layout:
+            fig.tight_layout()
+
+        out_dir.mkdir(parents=True, exist_ok=True)
+        out_path = out_dir / f"{group_name}_profile{suffix}.{settings.fig_format}"
+        fig.savefig(out_path, dpi=settings.fig_dpi, transparent=settings.fig_transparent)
+        plt.close(fig)
+
+        logger.info(f"Saved RMSF plot → {out_path}")
 
     keys = sorted(data.keys())
 
