@@ -38,8 +38,8 @@ __all__ = [
 ]
 
 
-_TRUE_LITERALS: frozenset[str] = frozenset({"true", "yes", "on", "1"})
-_FALSE_LITERALS: frozenset[str] = frozenset({"false", "no", "off", "0"})
+_TRUE_LITERALS: frozenset[str] = frozenset({"true", "yes", "on"})
+_FALSE_LITERALS: frozenset[str] = frozenset({"false", "no", "off"})
 _NONE_LITERALS: frozenset[str] = frozenset({"none", "null", "~"})
 
 
@@ -48,6 +48,10 @@ def _coerce_scalar(value: Any) -> Any:
     Coerces a scalar value into its appropriate type, such as None, boolean, integer,
     or float, based on its content. If the value cannot be interpreted as any of
     those specific types, it is returned as a stripped string.
+
+    Numeric coercion is attempted BEFORE bool-literal matching so that ``"0"``
+    and ``"1"`` remain ints (not False / True). Settings classes that consume
+    booleans accept native int 0/1 via ``_safe_bool``.
 
     :param value: The value to coerce. Can be of any type.
     :return: The coerced value, interpreted into the appropriate type (NoneType,
@@ -63,11 +67,9 @@ def _coerce_scalar(value: Any) -> Any:
     lowered = text.lower()
     if lowered in _NONE_LITERALS:
         return None
-    if lowered in _TRUE_LITERALS:
-        return True
-    if lowered in _FALSE_LITERALS:
-        return False
 
+    # Try numeric coercion first so "0" / "1" stay as int instead of becoming
+    # False / True (which would break any settings field expecting a number).
     try:
         return int(text)
     except ValueError:
@@ -77,6 +79,12 @@ def _coerce_scalar(value: Any) -> Any:
         return float(text)
     except ValueError:
         pass
+
+    # Word-literal booleans only. "0"/"1" intentionally excluded above.
+    if lowered in _TRUE_LITERALS:
+        return True
+    if lowered in _FALSE_LITERALS:
+        return False
 
     return text
 

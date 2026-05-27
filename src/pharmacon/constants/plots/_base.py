@@ -249,6 +249,10 @@ class PlotSettingsBase:
         if isinstance(value, bool):
             return value
 
+        # Accept native int 0 / 1 (e.g. "flag = 0" from an INI file).
+        if isinstance(value, int) and value in (0, 1):
+            return bool(value)
+
         if isinstance(value, str):
             v = value.strip().lower()
             if v in {"true", "1", "yes", "y"}:
