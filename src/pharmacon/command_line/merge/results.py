@@ -388,6 +388,7 @@ def run(args: argparse.Namespace) -> None:
     # Map subcommand → HDF5 group name
     SUBCOMMAND_TO_GROUP: dict[str, str] = {
         "rmsd": "rmsd",
+        "rmsf": "rmsf",
         "angles": "angles",
         "distances": "distances",
         "pp-interactions": "pp_interactions",
@@ -599,6 +600,200 @@ def run(args: argparse.Namespace) -> None:
             group, len(frames),
         )
 
+    def merge_per_selection_simple(*,
+                                   inputs_: list,
+                                   pta_out_,
+                                   group: str,
+                                   dataset: str,
+                                   key_fields: tuple[str, ...],
+                                   value_field: str,
+                                   schema: str) -> None:
+        """
+        Merges per-atom data across multiple input datasets that are organised
+        per *selection* rather than per *frame*. Used by analyses with no time
+        axis (e.g. RMSF).
+
+        For each selection label discovered in ``inputs_[0]``, this:
+        - reads ``/<group>/selection_<label>/<dataset>`` from every input;
+        - keys records by the supplied ``key_fields`` (full identity tuple);
+        - takes the strict intersection of keys across all inputs (records
+          present in only some inputs are dropped with a warning);
+        - for each surviving key, computes mean / std / n over the
+          ``value_field`` and writes a merged record carrying the original
+          ``key_fields`` (numeric types preserved from file1's row).
+
+        Per-selection dataset attrs (``selection_string``, ``fitting_group``,
+        ``frame_begin``, ``frame_end``, ``frame_step``) are copied from
+        file1; mismatches across inputs are warned but not blocking, matching
+        the policy used by :func:`merge_per_frame_simple` for time keys.
+
+        :param inputs_: List of opened PTA input handles.
+        :param pta_out_: Output PTA handle to write into.
+        :param group: Parent HDF5 group (e.g. ``"rmsf"``).
+        :param dataset: Dataset name within each selection (e.g. ``"atoms"``).
+        :param key_fields: Tuple of field names identifying an atom uniquely
+            across files.
+        :param value_field: Field whose value is aggregated (e.g. ``"rmsf"``).
+        :param schema: Schema string written to the merged dataset attrs.
+        :return: None
+        """
+        labels = list(inputs_[0]._iter_selections(group))
+        pta_out_.create_group(group)
+        log.debug(
+            "merge_per_selection_simple: group=%r dataset=%r selections=%d "
+            "inputs=%d key_fields=%s value_field=%r",
+            group, dataset, len(labels), len(inputs_),
+            list(key_fields), value_field,
+        )
+
+        PROPAGATE_ATTRS: tuple[str, ...] = (
+            "selection_string", "fitting_group",
+            "frame_begin", "frame_end", "frame_step",
+        )
+
+        for label in labels:
+            file1_path = f"{group}/selection_{label}/{dataset}"
+            if file1_path not in inputs_[0].file:
+                continue
+
+            file1_dset = inputs_[0].file[file1_path]
+            file1_attrs = dict(file1_dset.attrs)
+
+            # Parse file1's records, keeping the full typed record so we can
+            # preserve numeric key types (atom_index, resid) on output.
+            file1_records: dict[tuple, float] = {}
+            file1_typed: dict[tuple, dict] = {}
+            for row in file1_dset:
+                rec = json.loads(row)
+                key = tuple(str(rec[f]) for f in key_fields)
+                file1_records[key] = float(rec[value_field])
+                file1_typed[key] = rec
+            file1_keys = set(file1_records.keys())
+            log.trace(
+                "  selection %r: file1 has %d record(s)",
+                label, len(file1_records),
+            )
+
+            per_file_records: list[dict[tuple, float]] = [file1_records]
+            sel_ok = True
+
+            for idx in range(1, len(inputs_)):
+                pta_in = inputs_[idx]
+                dset_path = f"{group}/selection_{label}/{dataset}"
+                if dset_path not in pta_in.file:
+                    emit_warning(
+                        f"{group}: selection {label!r} missing in input "
+                        f"#{idx + 1}; skipping selection."
+                    )
+                    sel_ok = False
+                    break
+
+                dset = pta_in.file[dset_path]
+
+                # Sanity-check propagated attrs (warn, do not block).
+                for k in PROPAGATE_ATTRS:
+                    v1 = str(file1_attrs.get(k, "")).strip()
+                    vi = str(dset.attrs.get(k, "")).strip()
+                    if v1 != vi:
+                        emit_warning(
+                            f"{group}: selection {label!r}, input "
+                            f"#{idx + 1} has {k}={vi!r} but file1 has {v1!r}."
+                        )
+
+                file_records: dict[tuple, float] = {}
+                for row in dset:
+                    rec = json.loads(row)
+                    key = tuple(str(rec[f]) for f in key_fields)
+                    file_records[key] = float(rec[value_field])
+                per_file_records.append(file_records)
+                log.trace(
+                    "  selection %r: input #%d has %d record(s)",
+                    label, idx + 1, len(file_records),
+                )
+
+            if not sel_ok:
+                continue
+
+            # Strict intersection: a key must exist in every file.
+            common_keys = set(file1_keys)
+            for file_records in per_file_records[1:]:
+                common_keys &= set(file_records.keys())
+
+            dropped_from_file1 = file1_keys - common_keys
+            if dropped_from_file1:
+                emit_warning(
+                    f"{group}: selection {label!r}, "
+                    f"{len(dropped_from_file1)} key(s) from file1 "
+                    f"(e.g. {sorted(dropped_from_file1)[0]}) not present in "
+                    f"every input; dropped from merged output."
+                )
+            for idx in range(1, len(per_file_records)):
+                extra = set(per_file_records[idx].keys()) - file1_keys
+                if extra:
+                    emit_warning(
+                        f"{group}: selection {label!r}, input #{idx + 1} "
+                        f"has {len(extra)} key(s) not in file1 "
+                        f"(e.g. {sorted(extra)[0]}); dropped from merged output."
+                    )
+
+            log.trace(
+                "  selection %r: %d key(s) common across all inputs",
+                label, len(common_keys),
+            )
+
+            if not common_keys:
+                log.trace("  selection %r: no common keys, skipping write", label)
+                continue
+
+            records = []
+            for key in file1_records:
+                if key not in common_keys:
+                    continue
+                vals = [fr[key] for fr in per_file_records]
+                arr = np.asarray(vals, dtype=float)
+                # Recover original typed key fields from file1's parsed row.
+                rec_out: dict = {f: file1_typed[key][f] for f in key_fields}
+                rec_out["mean"] = float(arr.mean())
+                rec_out["std"] = float(arr.std(ddof=0))
+                rec_out["n"] = len(vals)
+                records.append(rec_out)
+
+            data = np.array(
+                [json.dumps(r) for r in records],
+                dtype=h5py.string_dtype(encoding="utf-8"),
+            )
+
+            sel_group_out = f"{group}/selection_{label}"
+            pta_out_.create_group(sel_group_out)
+
+            meta_out: dict[str, str] = {
+                "label": label,
+                "merged": "True",
+                "n_inputs": str(len(inputs_)),
+                "n_atoms": str(len(records)),
+                "schema": schema,
+                "format": "json-per-row",
+            }
+            for k in PROPAGATE_ATTRS:
+                if k in file1_attrs:
+                    meta_out[k] = str(file1_attrs[k])
+
+            pta_out_.create_dataset(
+                group_name=sel_group_out,
+                dataset_name=dataset,
+                data=data,
+                metadata=meta_out,
+            )
+            log.trace(
+                "  selection %r: wrote %d merged record(s) to %s/%s",
+                label, len(records), sel_group_out, dataset,
+            )
+
+        log.debug(
+            "merge_per_selection_simple: finished group=%r (%d selections)",
+            group, len(labels),
+        )
+
     def merge_interaction_modes(*,
                                 inputs_: list,
                                 pta_out_,
@@ -776,6 +971,16 @@ def run(args: argparse.Namespace) -> None:
                         key_fields=("label",),
                         value_field="value",
                         schema="{label, mean, std, n}",
+                    )
+                case "rmsf":
+                    merge_per_selection_simple(
+                        inputs_=inputs,
+                        pta_out_=pta_out,
+                        group=group_name,
+                        dataset="atoms",
+                        key_fields=("atom_index", "resid", "resname", "atom_name"),
+                        value_field="rmsf",
+                        schema="{atom_index, resid, resname, atom_name, mean, std, n}",
                     )
                 case "angles":
                     merge_per_frame_simple(
