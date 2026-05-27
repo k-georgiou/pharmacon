@@ -198,26 +198,42 @@ class RMSFPlotSettings(PlotSettingsBase):
                 fmt = ""
         self.xtick_format = fmt
 
-        # xtick_rotation: "auto" or a numeric string in [-360, 360].
-        rot = str(self.xtick_rotation).strip().lower()
-        if rot == "auto":
-            self.xtick_rotation = "auto"
-        else:
-            try:
-                angle = float(rot)
-                if -360 <= angle <= 360:
-                    self.xtick_rotation = rot
-                else:
-                    self._warn(
-                        f"xtick_rotation '{self.xtick_rotation}' out of [-360, 360], "
-                        f"using 'auto'."
-                    )
-                    self.xtick_rotation = "auto"
-            except ValueError:
+        # xtick_rotation: "auto" or a numeric angle in [-360, 360].
+        # Native ints / floats pass through as float so the value lands on
+        # the instance with the same numeric identity the INI declared.
+        raw_rot = self.xtick_rotation
+        if isinstance(raw_rot, bool):
+            raw_rot = float(raw_rot)
+        if isinstance(raw_rot, (int, float)):
+            angle = float(raw_rot)
+            if -360 <= angle <= 360:
+                self.xtick_rotation = angle
+            else:
                 self._warn(
-                    f"Invalid xtick_rotation '{self.xtick_rotation}', using 'auto'."
+                    f"xtick_rotation {raw_rot!r} out of [-360, 360], "
+                    f"using 'auto'."
                 )
                 self.xtick_rotation = "auto"
+        else:
+            rot = str(raw_rot).strip().lower()
+            if rot == "auto":
+                self.xtick_rotation = "auto"
+            else:
+                try:
+                    angle = float(rot)
+                    if -360 <= angle <= 360:
+                        self.xtick_rotation = angle
+                    else:
+                        self._warn(
+                            f"xtick_rotation '{raw_rot}' out of [-360, 360], "
+                            f"using 'auto'."
+                        )
+                        self.xtick_rotation = "auto"
+                except ValueError:
+                    self._warn(
+                        f"Invalid xtick_rotation '{raw_rot}', using 'auto'."
+                    )
+                    self.xtick_rotation = "auto"
 
         self.xtick_max_labels = self._safe_int(self.xtick_max_labels, 200, 5, 100000)
 
