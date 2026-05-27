@@ -2733,6 +2733,481 @@ class PharmaconPTAFile(PharmaconHDF5File):
                     rec["n"],
                 ])
 
+    def write_rmsf_data(self, *, selections: List[Dict], group_name: str = "rmsf",
+                        frame_begin: int, frame_end: int, frame_step: int = 1,
+                        fitting_group: str | None = None,
+                        overwrite: bool = False) -> None:
+        """
+        Writes per-atom RMSF data, one HDF5 subgroup per selection.
+
+        Stored at:
+            /<group_name>/selection_<label>/atoms
+
+        Each entry in `selections` is a dict with keys:
+            - "label":            str             — short name (e.g. "calpha")
+            - "selection_string": str             — MDAnalysis selection
+            - "atom_indices":     np.ndarray[int] — absolute topology indices
+            - "resids":           np.ndarray[int]
+            - "resnames":         np.ndarray[str]
+            - "atom_names":       np.ndarray[str]
+            - "rmsf":             np.ndarray[float] — per-atom RMSF
+
+        All arrays within one selection must share the same length (n_atoms).
+
+        :param selections: List of per-selection dicts.
+        :param group_name: Parent HDF5 group (default "rmsf").
+        :param frame_begin: First frame (inclusive) used to compute RMSF.
+        :param frame_end: Last frame (inclusive) used to compute RMSF.
+        :param frame_step: Frame stride used to compute RMSF.
+        :param fitting_group: MDAnalysis selection used for the AlignTraj pre-pass.
+        :param overwrite: If True, replace any existing per-selection subgroup.
+        :raises ValueError: If `selections` is empty, labels are duplicated, or
+            array lengths within a selection are inconsistent.
+        :raises FileExistsError: If a selection subgroup already exists and
+            `overwrite=False`.
+        """
+        if not selections:
+            raise ValueError("No selections provided")
+
+        if not self.group_exists(group_name):
+            self.create_group(group_name)
+
+        seen_labels: set = set()
+        required_keys = ("label", "selection_string", "atom_indices",
+                         "resids", "resnames", "atom_names", "rmsf")
+
+        for sel in selections:
+            missing = [k for k in required_keys if k not in sel]
+            if missing:
+                raise ValueError(
+                    f"Selection entry missing required keys: {missing}"
+                )
+
+            label = str(sel["label"])
+            if label in seen_labels:
+                raise ValueError(f"Duplicate selection label: '{label}'")
+            seen_labels.add(label)
+
+            atom_indices = np.asarray(sel["atom_indices"])
+            resids = np.asarray(sel["resids"])
+            resnames = np.asarray(sel["resnames"])
+            atom_names = np.asarray(sel["atom_names"])
+            rmsf_values = np.asarray(sel["rmsf"], dtype=float)
+
+            n_atoms = atom_indices.size
+            if n_atoms == 0:
+                raise ValueError(f"Selection '{label}' has 0 atoms")
+            for arr_name, arr in (("resids", resids),
+                                  ("resnames", resnames),
+                                  ("atom_names", atom_names),
+                                  ("rmsf", rmsf_values)):
+                if arr.size != n_atoms:
+                    raise ValueError(
+                        f"Selection '{label}': '{arr_name}' length ({arr.size}) "
+                        f"does not match atom_indices length ({n_atoms})"
+                    )
+
+            sel_group = f"{group_name}/selection_{label}"
+            if self.group_exists(sel_group):
+                if not overwrite:
+                    raise FileExistsError(
+                        f"Selection '{label}' already exists under '{group_name}'"
+                    )
+                self.delete_group(sel_group)
+            self.create_group(sel_group)
+
+            records = [
+                {
+                    "atom_index": int(atom_indices[i]),
+                    "resid": int(resids[i]),
+                    "resname": str(resnames[i]),
+                    "atom_name": str(atom_names[i]),
+                    "rmsf": float(rmsf_values[i]),
+                }
+                for i in range(n_atoms)
+            ]
+
+            data = np.array(
+                [json.dumps(r) for r in records],
+                dtype=h5py.string_dtype(encoding="utf-8"),
+            )
+
+            meta = {
+                "label": label,
+                "selection_string": str(sel["selection_string"]),
+                "n_atoms": str(n_atoms),
+                "fitting_group": "" if fitting_group is None else str(fitting_group),
+                "frame_begin": str(int(frame_begin)),
+                "frame_end": str(int(frame_end)),
+                "frame_step": str(int(frame_step)),
+                "mean": f"{float(rmsf_values.mean()):.6f}",
+                "min": f"{float(rmsf_values.min()):.6f}",
+                "max": f"{float(rmsf_values.max()):.6f}",
+                "median": f"{float(np.median(rmsf_values)):.6f}",
+                "schema": "{atom_index, resid, resname, atom_name, rmsf}",
+                "format": "json-per-row",
+            }
+
+            self.create_dataset(
+                group_name=sel_group,
+                dataset_name="atoms",
+                data=data,
+                metadata=meta,
+            )
+
+    def _iter_selections(self, group_name: str):
+        """
+        Iterates over selection labels within a specified group. Identifies
+        keys starting with "selection_" and yields each label (suffix) in
+        sorted order. Reserved subgroups (e.g. "statistics") are skipped
+        because they do not carry the "selection_" prefix.
+
+        :param group_name: The parent group (e.g. "rmsf").
+        :type group_name: str
+        :return: Generator yielding selection labels in sorted order.
+        :rtype: Iterator[str]
+        """
+        root = self.file[group_name]
+        labels = []
+        for name in root.keys():
+            if name.startswith("selection_"):
+                labels.append(name[len("selection_"):])
+        for label in sorted(labels):
+            yield label
+
+    def read_rmsf_data(self, *, group_name: str = "rmsf") -> Dict[str, Dict]:
+        """
+        Reads per-atom RMSF data for every selection under `group_name`.
+
+        Returns a dict-of-dicts (not a single packed ndarray) because each
+        selection can have a different atom count.
+
+        Returns:
+            {
+                label: {
+                    "selection_string": str,
+                    "atom_indices":     np.ndarray[int],
+                    "resids":           np.ndarray[int],
+                    "resnames":         np.ndarray[str],
+                    "atom_names":       np.ndarray[str],
+                    "rmsf":             np.ndarray[float],
+                },
+                ...
+            }
+
+        :param group_name: Parent group name (default "rmsf").
+        :raises ValueError: If the group is missing or no selections are found.
+        """
+        if not self.group_exists(group_name):
+            raise ValueError(f"Group '{group_name}' does not exist")
+
+        out: Dict[str, Dict] = {}
+        for label in self._iter_selections(group_name):
+            dset_path = f"{group_name}/selection_{label}/atoms"
+            if dset_path not in self.file:
+                continue
+            dset = self.file[dset_path]
+            attrs = dset.attrs
+            records = [json.loads(row) for row in dset]
+            if not records:
+                continue
+
+            entry: Dict = {
+                "selection_string": str(attrs.get("selection_string", "")),
+                "atom_indices": np.asarray([r["atom_index"] for r in records], dtype=int),
+                "resids":       np.asarray([r["resid"] for r in records], dtype=int),
+                "resnames":     np.asarray([r["resname"] for r in records], dtype=object),
+                "atom_names":   np.asarray([r["atom_name"] for r in records], dtype=object),
+            }
+
+            # Merged datasets carry mean/std/n in place of a single rmsf value.
+            if "rmsf" in records[0]:
+                entry["rmsf"] = np.asarray([r["rmsf"] for r in records], dtype=float)
+            else:
+                entry["mean"] = np.asarray([r["mean"] for r in records], dtype=float)
+                entry["std"]  = np.asarray([r["std"]  for r in records], dtype=float)
+                entry["n"]    = np.asarray([r["n"]    for r in records], dtype=int)
+            out[label] = entry
+
+        if not out:
+            raise ValueError("No RMSF selections found")
+        return out
+
+    def write_rmsf_statistics(self, *, group_name: str = "rmsf") -> None:
+        """
+        Builds RMSF summary statistics across atoms for each selection.
+
+        Frame-range provenance (begin/end/step) is read from each selection's
+        `atoms` dataset attrs (they were locked at write time), so no
+        begin/end/step args are needed here.
+
+        Per-selection record schema:
+            {label, n_atoms, mean, min, max, median,
+             argmax_atom_index, argmax_resid, argmax_resname, argmax_atom_name}
+
+        Stored at:
+            /<group_name>/statistics/table
+
+        Data format:
+            JSON-per-row
+        """
+        if not self.group_exists(group_name):
+            raise ValueError(f"Group '{group_name}' does not exist")
+
+        labels = list(self._iter_selections(group_name))
+        if not labels:
+            raise ValueError("No RMSF selections found")
+
+        records = []
+        frame_begin: int | None = None
+        frame_end: int | None = None
+        frame_step: int | None = None
+
+        for label in labels:
+            dset_path = f"{group_name}/selection_{label}/atoms"
+            if dset_path not in self.file:
+                continue
+            dset = self.file[dset_path]
+            attrs = dset.attrs
+
+            if frame_begin is None:
+                frame_begin = int(attrs.get("frame_begin", 0))
+                frame_end = int(attrs.get("frame_end", 0))
+                frame_step = int(attrs.get("frame_step", 1))
+
+            rows = [json.loads(r) for r in dset]
+            if not rows:
+                continue
+
+            # Merged datasets carry "mean" instead of "rmsf"; use whichever is present.
+            rmsf_arr = np.asarray(
+                [r.get("rmsf", r.get("mean")) for r in rows], dtype=float,
+            )
+            argmax = int(rmsf_arr.argmax())
+
+            records.append({
+                "label": label,
+                "n_atoms": int(rmsf_arr.size),
+                "mean": float(rmsf_arr.mean()),
+                "min": float(rmsf_arr.min()),
+                "max": float(rmsf_arr.max()),
+                "median": float(np.median(rmsf_arr)),
+                "argmax_atom_index": int(rows[argmax]["atom_index"]),
+                "argmax_resid": int(rows[argmax]["resid"]),
+                "argmax_resname": str(rows[argmax]["resname"]),
+                "argmax_atom_name": str(rows[argmax]["atom_name"]),
+            })
+
+        if not records:
+            raise ValueError("No RMSF values collected")
+
+        stats_group = f"{group_name}/statistics"
+        if self.group_exists(stats_group):
+            self.delete_group(stats_group)
+        self.create_group(stats_group)
+
+        data = np.array(
+            [json.dumps(r) for r in records],
+            dtype=h5py.string_dtype("utf-8"),
+        )
+
+        self.create_dataset(
+            group_name=stats_group,
+            dataset_name="table",
+            data=data,
+            metadata={
+                "n_rows": str(len(records)),
+                "frame_begin": str(frame_begin if frame_begin is not None else 0),
+                "frame_end": str(frame_end if frame_end is not None else 0),
+                "frame_step": str(frame_step if frame_step is not None else 1),
+                "end_inclusive": "True",
+                "schema": "{label, n_atoms, mean, min, max, median, "
+                          "argmax_atom_index, argmax_resid, argmax_resname, "
+                          "argmax_atom_name}",
+                "format": "json-per-row",
+            },
+        )
+
+        self.add_group_metadata(
+            group_name=stats_group,
+            metadata={
+                "completed": "True",
+                "n_selections": str(len(records)),
+                "description": "Aggregated RMSF statistics per selection",
+            },
+            overwrite=True,
+        )
+
+    def write_rmsf_data_to_csv(self, output_file: str | Path, *,
+                               group_name: str = "rmsf",
+                               is_merged: bool = False) -> None:
+        """
+        Writes per-atom RMSF data to a CSV file.
+
+        Non-merged schema:
+            selection, atom_index, resid, resname, atom_name, rmsf
+        Merged schema:
+            selection, atom_index, resid, resname, atom_name, mean, std
+
+        :param output_file: Path of the CSV file to write.
+        :param group_name: Parent group containing the RMSF data (default "rmsf").
+        :param is_merged: If True, expects merged per-atom records that carry
+            "mean" and "std" keys instead of "rmsf".
+        """
+        output_file = Path(output_file).expanduser().resolve()
+        with open(output_file, "w", newline="", encoding="utf-8") as fh:
+            writer = csv.writer(fh)
+            if not is_merged:
+                writer.writerow([
+                    "selection", "atom_index", "resid", "resname",
+                    "atom_name", "rmsf",
+                ])
+            else:
+                writer.writerow([
+                    "selection", "atom_index", "resid", "resname",
+                    "atom_name", "mean", "std",
+                ])
+
+            for label in self._iter_selections(group_name):
+                dset_path = f"{group_name}/selection_{label}/atoms"
+                if dset_path not in self.file:
+                    continue
+                dset = self.file[dset_path]
+                for row in dset:
+                    rec = json.loads(row)
+                    if not is_merged:
+                        writer.writerow([
+                            label,
+                            rec["atom_index"],
+                            rec["resid"],
+                            rec["resname"],
+                            rec["atom_name"],
+                            f"{rec['rmsf']:.6f}",
+                        ])
+                    else:
+                        writer.writerow([
+                            label,
+                            rec["atom_index"],
+                            rec["resid"],
+                            rec["resname"],
+                            rec["atom_name"],
+                            f"{rec['mean']:.6f}",
+                            f"{rec['std']:.6f}",
+                        ])
+
+    def write_rmsf_data_to_tsv(self, output_file: str | Path, *,
+                               group_name: str = "rmsf",
+                               is_merged: bool = False) -> None:
+        """
+        Writes per-atom RMSF data to a TSV file. Schema matches
+        write_rmsf_data_to_csv but separated by tabs.
+        """
+        output_file = Path(output_file).expanduser().resolve()
+        with open(output_file, "w", newline="", encoding="utf-8") as fh:
+            writer = csv.writer(fh, delimiter="\t")
+            if not is_merged:
+                writer.writerow([
+                    "selection", "atom_index", "resid", "resname",
+                    "atom_name", "rmsf",
+                ])
+            else:
+                writer.writerow([
+                    "selection", "atom_index", "resid", "resname",
+                    "atom_name", "mean", "std",
+                ])
+
+            for label in self._iter_selections(group_name):
+                dset_path = f"{group_name}/selection_{label}/atoms"
+                if dset_path not in self.file:
+                    continue
+                dset = self.file[dset_path]
+                for row in dset:
+                    rec = json.loads(row)
+                    if not is_merged:
+                        writer.writerow([
+                            label,
+                            rec["atom_index"],
+                            rec["resid"],
+                            rec["resname"],
+                            rec["atom_name"],
+                            f"{rec['rmsf']:.6f}",
+                        ])
+                    else:
+                        writer.writerow([
+                            label,
+                            rec["atom_index"],
+                            rec["resid"],
+                            rec["resname"],
+                            rec["atom_name"],
+                            f"{rec['mean']:.6f}",
+                            f"{rec['std']:.6f}",
+                        ])
+
+    def write_rmsf_statistics_to_csv(self, output_file: str | Path, *,
+                                     group_name: str = "rmsf") -> None:
+        """
+        Writes RMSF per-selection statistics to a CSV file.
+
+        Schema:
+            selection, n_atoms, mean, min, max, median,
+            argmax_atom_index, argmax_resid, argmax_resname, argmax_atom_name
+        """
+        output_file = Path(output_file).expanduser().resolve()
+        dset = self.file[f"{group_name}/statistics/table"]
+
+        with open(output_file, "w", newline="", encoding="utf-8") as fh:
+            writer = csv.writer(fh)
+            writer.writerow([
+                "selection", "n_atoms", "mean", "min", "max", "median",
+                "argmax_atom_index", "argmax_resid", "argmax_resname",
+                "argmax_atom_name",
+            ])
+            for row in dset:
+                rec = json.loads(row)
+                writer.writerow([
+                    rec["label"],
+                    rec["n_atoms"],
+                    f"{rec['mean']:.6f}",
+                    f"{rec['min']:.6f}",
+                    f"{rec['max']:.6f}",
+                    f"{rec['median']:.6f}",
+                    rec["argmax_atom_index"],
+                    rec["argmax_resid"],
+                    rec["argmax_resname"],
+                    rec["argmax_atom_name"],
+                ])
+
+    def write_rmsf_statistics_to_tsv(self, output_file: str | Path, *,
+                                     group_name: str = "rmsf") -> None:
+        """
+        Writes RMSF per-selection statistics to a TSV file. Schema matches
+        write_rmsf_statistics_to_csv but separated by tabs.
+        """
+        output_file = Path(output_file).expanduser().resolve()
+        dset = self.file[f"{group_name}/statistics/table"]
+
+        with open(output_file, "w", newline="", encoding="utf-8") as fh:
+            writer = csv.writer(fh, delimiter="\t")
+            writer.writerow([
+                "selection", "n_atoms", "mean", "min", "max", "median",
+                "argmax_atom_index", "argmax_resid", "argmax_resname",
+                "argmax_atom_name",
+            ])
+            for row in dset:
+                rec = json.loads(row)
+                writer.writerow([
+                    rec["label"],
+                    rec["n_atoms"],
+                    f"{rec['mean']:.6f}",
+                    f"{rec['min']:.6f}",
+                    f"{rec['max']:.6f}",
+                    f"{rec['median']:.6f}",
+                    rec["argmax_atom_index"],
+                    rec["argmax_resid"],
+                    rec["argmax_resname"],
+                    rec["argmax_atom_name"],
+                ])
+
     def write_merged_interaction_modes_to_csv(self, output_file: str | Path, *, group_name: str, mode_name: str) -> None:
         """
         Writes merged interaction mode data to a CSV file. The data is retrieved based on
