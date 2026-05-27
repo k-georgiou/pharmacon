@@ -27,6 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from helpers.mock_pta import (  # noqa: E402
     build_pli_pta, build_ppi_pta, build_pca_pta, build_universal_pta,
+    build_rmsf_pta, build_rmsf_merged_pta,
 )
 
 from pharmacon.fileio.pta import PharmaconPTAFile  # noqa: E402
@@ -35,6 +36,7 @@ from pharmacon.constants.plots import (  # noqa: E402
     ProteinProteinInteractionsHeatmap,
     PCAPlotScatterSettings,
     PlotUniversalSettings,
+    RMSFPlotSettings,
 )
 
 
@@ -155,3 +157,127 @@ def test_render_universal_rmsd_timeseries(tmp_path):
             is_merged=False,
         )
     _assert_nonempty_file_in(out_dir)
+
+
+# ---------------------------------------------------------------------------
+# RMSF profile (non-merged, per-selection figures)
+# ---------------------------------------------------------------------------
+
+def _rmsf_settings(**overrides):
+    base = {
+        "fig_dpi": 80,
+        "fig_size_width": 4,
+        "fig_size_height": 3,
+        "fig_format": "png",
+    }
+    base.update(overrides)
+    return RMSFPlotSettings.from_dict(base)
+
+
+def test_render_rmsf_non_merged_overlay(tmp_path):
+    from pharmacon.plotter.universal import plot_pta_rmsf_from_file
+    pta = build_rmsf_pta(tmp_path / "rmsf.pta")
+    out_dir = tmp_path / "out_rmsf"
+    out_dir.mkdir()
+
+    with PharmaconPTAFile(pta, mode="r") as f:
+        plot_pta_rmsf_from_file(
+            f, group_name="rmsf", settings=_rmsf_settings(),
+            out_dir=out_dir, is_merged=False,
+        )
+    files = sorted(p.name for p in out_dir.iterdir())
+    # Overlay mode → single file
+    assert files == ["rmsf_profile.png"]
+    _assert_nonempty_file_in(out_dir)
+
+
+def test_render_rmsf_plot_multiple_yields_one_per_selection(tmp_path):
+    from pharmacon.plotter.universal import plot_pta_rmsf_from_file
+    pta = build_rmsf_pta(tmp_path / "rmsf.pta")
+    out_dir = tmp_path / "out_rmsf"
+    out_dir.mkdir()
+
+    with PharmaconPTAFile(pta, mode="r") as f:
+        plot_pta_rmsf_from_file(
+            f, group_name="rmsf",
+            settings=_rmsf_settings(plot_multiple=True),
+            out_dir=out_dir, is_merged=False,
+        )
+    files = sorted(p.name for p in out_dir.iterdir())
+    assert files == ["rmsf_profile_backbone.png", "rmsf_profile_calpha.png"]
+
+
+def test_render_rmsf_merged_has_std_band_branch(tmp_path):
+    from pharmacon.plotter.universal import plot_pta_rmsf_from_file
+    pta = build_rmsf_merged_pta(tmp_path / "merged.pta")
+    out_dir = tmp_path / "out_rmsf_merged"
+    out_dir.mkdir()
+
+    with PharmaconPTAFile(pta, mode="r") as f:
+        plot_pta_rmsf_from_file(
+            f, group_name="rmsf", settings=_rmsf_settings(),
+            out_dir=out_dir, is_merged=True,
+        )
+    _assert_nonempty_file_in(out_dir)
+
+
+def test_render_rmsf_atom_name_axis_with_custom_xticks(tmp_path):
+    from pharmacon.plotter.universal import plot_pta_rmsf_from_file
+    pta = build_rmsf_pta(tmp_path / "rmsf.pta")
+    out_dir = tmp_path / "out_rmsf_atomname"
+    out_dir.mkdir()
+
+    settings = _rmsf_settings(
+        x_axis="atom_name",
+        xtick_format="{atom_index} {atom_name}",
+        xtick_rotation="90",
+    )
+    with PharmaconPTAFile(pta, mode="r") as f:
+        plot_pta_rmsf_from_file(
+            f, group_name="rmsf", settings=settings,
+            out_dir=out_dir, is_merged=False,
+        )
+    _assert_nonempty_file_in(out_dir)
+
+
+def test_render_rmsf_with_shading_and_axis_limits(tmp_path):
+    from pharmacon.plotter.universal import plot_pta_rmsf_from_file
+    pta = build_rmsf_pta(tmp_path / "rmsf.pta")
+    out_dir = tmp_path / "out_rmsf_shaded"
+    out_dir.mkdir()
+
+    settings = _rmsf_settings(
+        x_axis="resid",
+        y_min="0",
+        y_max="2",
+        shading="1,2,#888888,0.3,N-term; 2,3,#ffa500,0.3,body",
+        shading_show_legend=True,
+        colors_by_label="calpha:#d62728, backbone:#1f77b4",
+    )
+    with PharmaconPTAFile(pta, mode="r") as f:
+        plot_pta_rmsf_from_file(
+            f, group_name="rmsf", settings=settings,
+            out_dir=out_dir, is_merged=False,
+        )
+    _assert_nonempty_file_in(out_dir)
+
+
+def test_render_rmsf_svg_keeps_text_editable(tmp_path):
+    """Module-level plt.rcParams['svg.fonttype']='none' must keep <text>
+    elements present in SVG output."""
+    from pharmacon.plotter.universal import plot_pta_rmsf_from_file
+    pta = build_rmsf_pta(tmp_path / "rmsf.pta")
+    out_dir = tmp_path / "out_rmsf_svg"
+    out_dir.mkdir()
+
+    with PharmaconPTAFile(pta, mode="r") as f:
+        plot_pta_rmsf_from_file(
+            f, group_name="rmsf",
+            settings=_rmsf_settings(fig_format="svg",
+                                    fig_title="EDIT-CHECK-MARKER"),
+            out_dir=out_dir, is_merged=False,
+        )
+    svg = next(out_dir.iterdir())
+    text = svg.read_text()
+    assert "<text" in text, "SVG should contain editable <text> elements"
+    assert "EDIT-CHECK-MARKER" in text

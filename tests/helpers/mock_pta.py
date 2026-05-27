@@ -37,8 +37,11 @@ __all__ = [
     "build_ppi_merged_pta",
     "build_pca_pta",
     "build_universal_pta",
+    "build_rmsf_pta",
+    "build_rmsf_merged_pta",
     "DEFAULT_PLI_ROWS",
     "DEFAULT_PPI_ROWS",
+    "DEFAULT_RMSF_SELECTIONS",
 ]
 
 
@@ -500,6 +503,182 @@ def build_universal_pta(path: Path, *, group: str,
                           "format": "json-per-row"},
             )
 
+        _finalize_metadata(pta, blueprint=blueprint)
+
+    return path
+
+
+# A small, deterministic RMSF dataset shared by the RMSF tests.
+# Each entry is (label, selection_string, atoms) where atoms is a list of
+# (atom_index, resid, resname, atom_name, rmsf) tuples.
+DEFAULT_RMSF_SELECTIONS: tuple = (
+    ("calpha", "name CA", [
+        (0, 1, "ALA", "CA", 0.50),
+        (4, 2, "GLY", "CA", 1.20),
+        (9, 3, "SER", "CA", 0.80),
+    ]),
+    ("backbone", "backbone", [
+        (0, 1, "ALA", "N",  0.30),
+        (1, 1, "ALA", "CA", 0.50),
+        (2, 1, "ALA", "C",  0.40),
+        (3, 2, "GLY", "N",  0.90),
+        (4, 2, "GLY", "CA", 1.20),
+        (5, 2, "GLY", "C",  1.10),
+    ]),
+)
+
+
+def _selections_to_dicts(selections: Sequence) -> list[dict]:
+    """Convert (label, sel_str, [(i, resid, resname, atom_name, rmsf), ...])
+    tuples into the dict-list shape `write_rmsf_data` consumes."""
+    out: list[dict] = []
+    for label, sel_str, atoms in selections:
+        out.append({
+            "label": label,
+            "selection_string": sel_str,
+            "atom_indices": np.array([a[0] for a in atoms], dtype=int),
+            "resids":       np.array([a[1] for a in atoms], dtype=int),
+            "resnames":     np.array([a[2] for a in atoms]),
+            "atom_names":   np.array([a[3] for a in atoms]),
+            "rmsf":         np.array([a[4] for a in atoms], dtype=float),
+        })
+    return out
+
+
+def build_rmsf_pta(
+    path: Path,
+    *,
+    selections: Sequence | None = None,
+    fitting_group: str = "protein and name CA",
+    frame_begin: int = 0,
+    frame_end: int = 100,
+    frame_step: int = 1,
+) -> Path:
+    """Build a mock non-merged RMSF PTA at `path`.
+
+    Uses the production `write_rmsf_data` + `write_rmsf_statistics` writers
+    so the file shape matches what `trajectory rmsf` actually produces.
+    """
+    if selections is None:
+        selections = DEFAULT_RMSF_SELECTIONS
+
+    sel_dicts = _selections_to_dicts(selections)
+    blueprint = f"mock-rmsf::{path.name}::{len(sel_dicts)}"
+
+    with PharmaconPTAFile(path, overwrite=True, mode="a",
+                          command="Trajectory Analysis", subcommand="rmsf") as pta:
+        pta.add_file_metadata({
+            "description": "RMSF (mock)",
+            "topology_file": "mock://topology",
+            "trajectory_file": "mock://trajectory",
+            "fitting_group": fitting_group,
+            "selections": str([s[1] for s in selections]),
+            "names": str([s[0] for s in selections]),
+            "reference_frame": "average",
+            "begin": str(frame_begin),
+            "end": str(frame_end),
+            "step": str(frame_step),
+            "is_merged": "False",
+            "total_frames": str(frame_end),
+        })
+        pta.create_group("rmsf")
+        pta.write_rmsf_data(
+            selections=sel_dicts,
+            group_name="rmsf",
+            frame_begin=frame_begin,
+            frame_end=frame_end,
+            frame_step=frame_step,
+            fitting_group=fitting_group,
+        )
+        pta.write_rmsf_statistics(group_name="rmsf")
+        pta.add_group_metadata(group_name="rmsf", metadata={"completed": "True"})
+        _finalize_metadata(pta, blueprint=blueprint)
+
+    return path
+
+
+def build_rmsf_merged_pta(
+    path: Path,
+    *,
+    selections: Sequence | None = None,
+    n_inputs: int = 2,
+    std_value: float = 0.1,
+    fitting_group: str = "protein and name CA",
+    frame_begin: int = 0,
+    frame_end: int = 100,
+    frame_step: int = 1,
+    compute_statistics: bool = False,
+) -> Path:
+    """Build a mock merged RMSF PTA. Per-atom records carry
+    {atom_index, resid, resname, atom_name, mean, std, n} instead of the
+    non-merged {..., rmsf} schema.
+
+    Writes per-selection subgroups directly via `create_dataset` to avoid
+    going through the production writer (which expects "rmsf"). When
+    `compute_statistics=True`, also calls `write_rmsf_statistics` inside
+    the same write session (the real `merge results` does NOT, per
+    decision 2a; this knob exists for tests that exercise the merged-
+    record fallback in the statistics builder).
+    """
+    if selections is None:
+        selections = DEFAULT_RMSF_SELECTIONS
+
+    blueprint = f"mock-rmsf-merged::{path.name}::{len(selections)}"
+
+    with PharmaconPTAFile(path, overwrite=True, mode="a",
+                          command="Trajectory Analysis", subcommand="rmsf") as pta:
+        pta.add_file_metadata({
+            "description": "Merged RMSF (mock)",
+            "fitting_group": fitting_group,
+            "is_merged": "True",
+            "n_inputs": str(n_inputs),
+            "merge_strategy": "per-selection avg+std",
+        })
+        pta.create_group("rmsf")
+
+        for label, sel_str, atoms in selections:
+            sel_group = f"rmsf/selection_{label}"
+            pta.create_group(sel_group)
+
+            records = [
+                {
+                    "atom_index": int(i),
+                    "resid":      int(resid),
+                    "resname":    str(resname),
+                    "atom_name":  str(atom_name),
+                    "mean":       float(rmsf),
+                    "std":        float(std_value),
+                    "n":          int(n_inputs),
+                }
+                for (i, resid, resname, atom_name, rmsf) in atoms
+            ]
+            data = np.array(
+                [json.dumps(r) for r in records],
+                dtype=h5py.string_dtype(encoding="utf-8"),
+            )
+            pta.create_dataset(
+                group_name=sel_group,
+                dataset_name="atoms",
+                data=data,
+                metadata={
+                    "label": label,
+                    "selection_string": sel_str,
+                    "n_atoms": str(len(atoms)),
+                    "fitting_group": fitting_group,
+                    "frame_begin": str(frame_begin),
+                    "frame_end":   str(frame_end),
+                    "frame_step":  str(frame_step),
+                    "merged":      "True",
+                    "n_inputs":    str(n_inputs),
+                    "schema":      "{atom_index, resid, resname, atom_name, mean, std, n}",
+                    "format":      "json-per-row",
+                },
+            )
+
+        if compute_statistics:
+            pta.write_rmsf_statistics(group_name="rmsf")
+
+        pta.add_group_metadata(group_name="rmsf", metadata={"completed": "True"})
         _finalize_metadata(pta, blueprint=blueprint)
 
     return path
