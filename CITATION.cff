@@ -7,10 +7,10 @@ authors:
     family-names: Georgiou
     email: 
     affiliation: "Department of Pharmacy, National and Kapodistrian University of Athens"
-    orcid: ""  # TODO: add your ORCID (e.g. https://orcid.org/0000-0000-0000-0000)
+    orcid: "https://orcid.org/0009-0003-5454-904X"
 repository-code: "https://github.com/k-georgiou/pharmacon"
 url: "https://github.com/k-georgiou/pharmacon"
-license: Apache-2.0
+license: GPL-3.0-only
 version: 1.0.0
 date-released: "2026-04-13"
 keywords:
@@ -31,13 +31,13 @@ abstract: >-
   and produces publication-ready plots.
 preferred-citation:
   type: article
-  title: "Pharmacon: a unified command-line suite for molecular-dynamics trajectory and structure analysis"
+  title: "Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit"
   authors:
     - given-names: Kyriakos
       family-names: Georgiou
       email: 
       affiliation: "Department of Pharmacy, National and Kapodistrian University of Athens"
-  journal: "TBD"          # TODO: update when published
-  year: 2026              # TODO: update when published
+  journal: "Journal of Chemical Information and Modeling"
+  year: 2026
   doi: "TBD"              # TODO: update when published (e.g. 10.1038/s41597-023-00972-3)
   url: "TBD"              # TODO: update when published

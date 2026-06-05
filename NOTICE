@@ -1,27 +1,35 @@
 Pharmacon — Molecular Dynamics Suite
-Copyright 2026 Kyriakos Georgiou
+Copyright (C) 2026 Kyriakos Georgiou
 Department of Pharmacy, National and Kapodistrian University of Athens
 Contact: 
 
-This product is licensed under the Apache License, Version 2.0 (the
-"License"); you may not use this software except in compliance with the
-License. A copy of the License is distributed with this software as
-LICENSE.txt and is also available at:
+This program is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License, version 3 only, as
+published by the Free Software Foundation.
 
-    http://www.apache.org/licenses/LICENSE-2.0
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+for more details.
+
+A copy of the GNU General Public License v3 is distributed with this
+software as LICENSE.txt and is also available at:
+
+    https://www.gnu.org/licenses/gpl-3.0.txt
+
+SPDX-License-Identifier: GPL-3.0-only
 
 ================================================================================
-ACADEMIC CITATION REQUEST
+ACADEMIC CITATION
 ================================================================================
 
-If you use Pharmacon — in whole or in part, modified or unmodified — in any
+If you use Pharmacon — in whole or in part — in any
 work that results in a publication (including but not limited to peer-reviewed
 articles, preprints, conference papers, posters, theses, technical reports,
 books, and public datasets), please cite the following reference:
 
-    Georgiou, K. Pharmacon: a unified command-line suite for
-    molecular-dynamics trajectory and structure analysis.
-    [Journal / Preprint Server], Year.
+    Georgiou, K. Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit.
+    Journal of Chemical Information and Modeling, 2026.
     DOI: [DOI PLACEHOLDER — TO BE UPDATED ON PUBLICATION]
     URL: [URL PLACEHOLDER — TO BE UPDATED ON PUBLICATION]
 
@@ -29,10 +37,9 @@ BibTeX:
 
     @article{georgiou_pharmacon,
       author  = {Georgiou, Kyriakos},
-      title   = {Pharmacon: a unified command-line suite for
-                 molecular-dynamics trajectory and structure analysis},
-      journal = {TBD},
-      year    = {TBD},
+      title   = {Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit},
+      journal = {Journal of Chemical Information and Modeling},
+      year    = {2026},
       doi     = {TBD},
       url     = {TBD}
     }

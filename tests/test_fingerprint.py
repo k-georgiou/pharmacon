@@ -1,4 +1,7 @@
 """
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
+
 Tests for pharmacon.utils.fingerprint
 """
 import pytest
@@ -10,10 +13,6 @@ from pharmacon.utils.fingerprint import (
     create_pharmacon_signature,
 )
 
-
-# ---------------------------------------------------------------------------
-# _normalize_token
-# ---------------------------------------------------------------------------
 
 class TestNormalizeToken:
     def test_returns_uppercase(self):
@@ -54,10 +53,6 @@ class TestNormalizeToken:
             _normalize_token("he\rllo", "f")
 
 
-# ---------------------------------------------------------------------------
-# _chunk_text
-# ---------------------------------------------------------------------------
-
 class TestChunkText:
     def test_default_chunk_size_4(self):
         assert _chunk_text("ABCDEFGH") == "ABCD-EFGH"
@@ -91,10 +86,6 @@ class TestChunkText:
         with pytest.raises(ValueError):
             _chunk_text("ABC", chunk_size=-1)
 
-
-# ---------------------------------------------------------------------------
-# create_pharmacon_signature
-# ---------------------------------------------------------------------------
 
 class TestCreatePharmaconSignature:
     def test_returns_dataclass_instance(self):

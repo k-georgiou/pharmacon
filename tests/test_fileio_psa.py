@@ -1,4 +1,7 @@
 """
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
+
 Tests for pharmacon.fileio.psa.PharmaconPSAFile
 """
 import pytest
@@ -7,10 +10,6 @@ from pathlib import Path
 
 from pharmacon.fileio.psa import PharmaconPSAFile
 
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 def _open(path, mode="a"):
     return PharmaconPSAFile(path, mode=mode)
@@ -34,10 +33,6 @@ def _make_sequences():
     }
 
 
-# ---------------------------------------------------------------------------
-# Schema constants
-# ---------------------------------------------------------------------------
-
 class TestPSASchemaConstants:
     def test_scalar_property_columns_non_empty(self):
         assert len(PharmaconPSAFile.SCALAR_PROPERTY_COLUMNS) > 0
@@ -57,10 +52,6 @@ class TestPSASchemaConstants:
         assert len(PharmaconPSAFile.FINGERPRINT_FIELDS) == 4
         assert "morgan" in PharmaconPSAFile.FINGERPRINT_FIELDS
 
-
-# ---------------------------------------------------------------------------
-# write_sequence / read_sequence roundtrip
-# ---------------------------------------------------------------------------
 
 class TestSequenceRoundtrip:
     def test_write_and_read_returns_both_chains(self, tmp_path):
@@ -137,10 +128,6 @@ class TestSequenceRoundtrip:
                 f.read_sequence(group_name="nonexistent")
 
 
-# ---------------------------------------------------------------------------
-# write_sequence_fasta
-# ---------------------------------------------------------------------------
-
 class TestSequenceFASTA:
     def test_fasta_file_created(self, tmp_path):
         path = tmp_path / "test.psa"
@@ -183,10 +170,6 @@ class TestSequenceFASTA:
             with pytest.raises(FileExistsError):
                 f.write_sequence_fasta(fasta_path, overwrite=False)
 
-
-# ---------------------------------------------------------------------------
-# write_sequence_to_csv
-# ---------------------------------------------------------------------------
 
 class TestSequenceCSV:
     def test_csv_file_created(self, tmp_path):

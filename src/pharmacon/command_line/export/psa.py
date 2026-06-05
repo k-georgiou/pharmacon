@@ -1,4 +1,6 @@
-"""Pharmacon — Molecular Dynamics Suite, developed by Kyriakos Georgiou, 2026.
+"""
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
 
 export psa — Export Pharmacon Structure Analysis data to CSV, TSV, or FASTA.
 """

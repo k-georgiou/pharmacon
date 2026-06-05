@@ -1,4 +1,7 @@
 """
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
+
 Tests for `RMSFPlotSettings` (pharmacon/constants/plots/rmsf.py).
 
 Covers the alias registry, `from_dict` construction, and every validator
@@ -14,10 +17,6 @@ import pytest
 from pharmacon.constants.plots import RMSFPlotSettings, PlotSettingsBase
 
 
-# ---------------------------------------------------------------------------
-# Registry
-# ---------------------------------------------------------------------------
-
 class TestAliasRegistry:
     def test_aliases_declared(self):
         assert RMSFPlotSettings.alias == ("PTA-RMSF", "PTA_RMSF")
@@ -27,10 +26,6 @@ class TestAliasRegistry:
         # PlotSettingsBase.resolve normalises to uppercase
         assert PlotSettingsBase.resolve(alias.upper()) is RMSFPlotSettings
 
-
-# ---------------------------------------------------------------------------
-# Defaults
-# ---------------------------------------------------------------------------
 
 class TestDefaults:
     def test_construction_with_empty_overrides(self):
@@ -46,10 +41,6 @@ class TestDefaults:
         assert s.xtick_rotation == "auto"
 
 
-# ---------------------------------------------------------------------------
-# x_axis enum
-# ---------------------------------------------------------------------------
-
 class TestXAxis:
     @pytest.mark.parametrize("value", ["resid", "atom_index", "position", "atom_name"])
     def test_valid_values_accepted(self, value):
@@ -64,10 +55,6 @@ class TestXAxis:
         s = RMSFPlotSettings.from_dict({"x_axis": "ATOM_NAME"})
         assert s.x_axis == "atom_name"
 
-
-# ---------------------------------------------------------------------------
-# xtick_format
-# ---------------------------------------------------------------------------
 
 class TestXtickFormat:
     def test_valid_template_passes_through(self):
@@ -92,10 +79,6 @@ class TestXtickFormat:
         s = RMSFPlotSettings.from_dict({"xtick_format": template})
         assert s.xtick_format == template
 
-
-# ---------------------------------------------------------------------------
-# xtick_rotation
-# ---------------------------------------------------------------------------
 
 class TestXtickRotation:
     def test_auto_default(self):
@@ -124,10 +107,6 @@ class TestXtickRotation:
         s = RMSFPlotSettings.from_dict({"xtick_rotation": value})
         assert s.xtick_rotation == "auto"
 
-
-# ---------------------------------------------------------------------------
-# colors_by_label
-# ---------------------------------------------------------------------------
 
 class TestColorsByLabel:
     def test_basic_parse(self):
@@ -165,10 +144,6 @@ class TestColorsByLabel:
         s = RMSFPlotSettings.from_dict({"colors_by_label": ""})
         assert s.colors_by_label_map == {}
 
-
-# ---------------------------------------------------------------------------
-# shading
-# ---------------------------------------------------------------------------
 
 class TestShading:
     def test_two_regions(self):
@@ -224,10 +199,6 @@ class TestShading:
         assert starts == [0.0, 20.0]
 
 
-# ---------------------------------------------------------------------------
-# Axis limits
-# ---------------------------------------------------------------------------
-
 class TestAxisLimits:
     def test_numeric_strings_become_floats(self):
         s = RMSFPlotSettings.from_dict({"y_min": "0", "y_max": "3.5"})
@@ -251,10 +222,6 @@ class TestAxisLimits:
         s = RMSFPlotSettings.from_dict({"y_min": False, "y_max": True})
         assert s.y_min == 0.0 and s.y_max == 1.0
 
-
-# ---------------------------------------------------------------------------
-# line_colors string-input handling (INI quirk)
-# ---------------------------------------------------------------------------
 
 class TestLineColorsStringInput:
     def test_comma_separated_string_is_split(self):

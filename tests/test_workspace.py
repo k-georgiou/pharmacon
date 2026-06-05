@@ -1,4 +1,7 @@
 """
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
+
 Tests for pharmacon.utils.workspace.PharmaconWorkspace
 """
 import os
@@ -8,9 +11,6 @@ from pathlib import Path
 from pharmacon.utils.workspace import PharmaconWorkspace
 
 
-# ---------------------------------------------------------------------------
-# Initialization
-# ---------------------------------------------------------------------------
 
 class TestPharmaconWorkspaceInit:
     def test_no_temp_dir(self, tmp_path):
@@ -58,10 +58,6 @@ class TestPharmaconWorkspaceInit:
         assert ws.origin_cwd == original
 
 
-# ---------------------------------------------------------------------------
-# Cleanup
-# ---------------------------------------------------------------------------
-
 class TestPharmaconWorkspaceCleanup:
     def test_cleanup_removes_temp_dir(self, tmp_path):
         ws = PharmaconWorkspace(
@@ -90,10 +86,6 @@ class TestPharmaconWorkspaceCleanup:
         ws.cleanup()
         ws.cleanup()  # second call must not raise
 
-
-# ---------------------------------------------------------------------------
-# chdir_to_temp / restore_cwd
-# ---------------------------------------------------------------------------
 
 class TestChdirAndRestore:
     def test_chdir_to_temp_changes_cwd(self, tmp_path):
@@ -135,10 +127,6 @@ class TestChdirAndRestore:
         ws.cleanup()
         assert Path.cwd().resolve() == original
 
-
-# ---------------------------------------------------------------------------
-# Context manager
-# ---------------------------------------------------------------------------
 
 class TestPharmaconWorkspaceContextManager:
     def test_context_manager_restores_cwd(self, tmp_path):

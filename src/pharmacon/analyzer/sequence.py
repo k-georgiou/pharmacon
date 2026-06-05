@@ -1,4 +1,6 @@
-"""Pharmacon — Molecular Dynamics Suite, developed by Kyriakos Georgiou, 2026.
+"""
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
 
 Provides functionality to extract protein sequence information from an MDAnalysis
 Universe object and convert sequence data into FASTA formatted strings.

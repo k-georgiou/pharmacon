@@ -1,4 +1,7 @@
 """
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
+
 Tests for pharmacon.command_line.registry.CommandRegistry
 """
 import pytest
@@ -7,9 +10,6 @@ from pharmacon.command_line.registry import CommandRegistry, get_registry
 from pharmacon.command_line.base import CommandSpec, SubcommandSpec
 
 
-# ---------------------------------------------------------------------------
-# Discovery
-# ---------------------------------------------------------------------------
 
 class TestCommandRegistryDiscovery:
     @pytest.fixture(scope="module")
@@ -37,10 +37,6 @@ class TestCommandRegistryDiscovery:
     def test_commands_property_is_dict(self, registry):
         assert isinstance(registry.commands, dict)
 
-
-# ---------------------------------------------------------------------------
-# Subcommand discovery
-# ---------------------------------------------------------------------------
 
 class TestSubcommandDiscovery:
     @pytest.fixture(scope="module")
@@ -78,10 +74,6 @@ class TestSubcommandDiscovery:
     def test_get_subcommand_unknown_subcommand_returns_none(self, registry):
         assert registry.get_subcommand("trajectory", "nonexistent") is None
 
-
-# ---------------------------------------------------------------------------
-# Singleton
-# ---------------------------------------------------------------------------
 
 class TestGetRegistrySingleton:
     def test_get_registry_returns_command_registry(self):

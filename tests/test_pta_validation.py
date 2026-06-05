@@ -1,4 +1,8 @@
-"""Tests for the shared validator: pharmacon.utils.pta_validation.
+"""
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
+
+Tests for the shared validator: pharmacon.utils.pta_validation.
 
 Covers happy paths and all named failure modes for both PTA and PSA
 files, plus the merge-specific `allow_merged=False` guard.
@@ -21,10 +25,6 @@ from pharmacon.utils.pta_validation import validate_pharmacon_file
 from pharmacon.command_line.exceptions import ValidationError
 
 
-# ---------------------------------------------------------------------------
-# Happy paths
-# ---------------------------------------------------------------------------
-
 class TestHappyPaths:
     def test_pta_returns_attrs_dict(self, tmp_path):
         path = build_pli_pta(tmp_path / "pli.pta", n_frames=10)
@@ -41,20 +41,12 @@ class TestHappyPaths:
         assert attrs["pharmacon_version"] == "0.1.0"
 
 
-# ---------------------------------------------------------------------------
-# Bad format kw
-# ---------------------------------------------------------------------------
-
 class TestBadFormatKw:
     def test_unknown_format_raises_value_error(self, tmp_path):
         path = build_pli_pta(tmp_path / "pli.pta", n_frames=10)
         with pytest.raises(ValueError, match="expected_format"):
             validate_pharmacon_file(path, expected_format="xyz")
 
-
-# ---------------------------------------------------------------------------
-# Failure paths — one per check in the validator
-# ---------------------------------------------------------------------------
 
 def _open_attrs(path: Path):
     return h5py.File(path, "a")
@@ -120,10 +112,6 @@ class TestFailurePaths:
         with pytest.raises(ValidationError, match="does not have completed=True"):
             validate_pharmacon_file(path, expected_format="pta")
 
-
-# ---------------------------------------------------------------------------
-# allow_merged guard (used by merge)
-# ---------------------------------------------------------------------------
 
 class TestAllowMergedGuard:
     def test_merged_file_passes_when_allowed(self, tmp_path):

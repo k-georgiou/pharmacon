@@ -1,4 +1,6 @@
-"""Pharmacon — Molecular Dynamics Suite, developed by Kyriakos Georgiou, 2026.
+"""
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
 
 Universal PTA time-series plot settings used for RMSD, angles, distances
 (and any other per-frame scalar dataset stored under ``/<group>/frame_<N>``).

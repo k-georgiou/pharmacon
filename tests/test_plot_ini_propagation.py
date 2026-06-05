@@ -1,4 +1,8 @@
-"""For every example INI under examples/plot_ini/, verify that every
+"""
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
+
+For every example INI under examples/plot_ini/, verify that every
 section maps to a known settings class, every key in every section is a
 real field on that class, and after the real CLI pipeline runs
 (`read_ini -> namespace_to_dict -> _flatten_section -> cls.from_dict`)
@@ -62,10 +66,6 @@ def _collect_section_cases() -> list:
 SECTION_CASES = _collect_section_cases()
 
 
-# ---------------------------------------------------------------------------
-# 1) every section resolves to a known settings class
-# ---------------------------------------------------------------------------
-
 class TestSectionRecognition:
     def test_at_least_one_ini_with_sections(self):
         assert SECTION_CASES, (
@@ -90,10 +90,6 @@ class TestSectionRecognition:
         )
 
 
-# ---------------------------------------------------------------------------
-# 2) every key in the INI section is a real field on the settings class
-# ---------------------------------------------------------------------------
-
 @pytest.mark.parametrize("ini_file,section_name,cls,overrides", SECTION_CASES)
 def test_no_unknown_keys_in_section(ini_file, section_name, cls, overrides):
     """Catches typos/dead keys in the example INI itself: every key under
@@ -107,10 +103,6 @@ def test_no_unknown_keys_in_section(ini_file, section_name, cls, overrides):
         f"{cls.__name__}: {unknown}"
     )
 
-
-# ---------------------------------------------------------------------------
-# 3) every known key propagates from INI to settings instance verbatim
-# ---------------------------------------------------------------------------
 
 def _equal_for_settings(a: Any, b: Any) -> bool:
     """Treat list/tuple as equal element-wise so `[..., ...]` from the

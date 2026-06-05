@@ -1,4 +1,9 @@
-"""Tests for pure-utility functions in pharmacon.plotter.interactions."""
+"""
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
+
+Tests for pure-utility functions in pharmacon.plotter.interactions.
+"""
 from __future__ import annotations
 
 import pytest
@@ -10,10 +15,6 @@ from pharmacon.plotter.interactions import (
     _PLI_STACK_RANK,
 )
 
-
-# ---------------------------------------------------------------------------
-# parse_range_dict
-# ---------------------------------------------------------------------------
 
 class TestParseRangeDict:
     def test_dict_input_passthrough(self):
@@ -64,10 +65,6 @@ class TestParseRangeDict:
         result = parse_range_dict({"A": (5, 5)})
         assert result["A"] == (5, 5)
 
-
-# ---------------------------------------------------------------------------
-# parse_frame_interaction_record
-# ---------------------------------------------------------------------------
 
 # Reference record layouts (frame_number=0 is dropped before this function):
 #   Atom-atom: [label, a1_idx, a1_name, a1_id, a1_type, a1_element,
@@ -162,10 +159,6 @@ class TestParseFrameInteractionRecord:
         assert out["interaction"] == "IONIC"
         assert out["ligand_atoms"] == []
 
-
-# ---------------------------------------------------------------------------
-# _PLI_STACK_ORDER / _PLI_STACK_RANK reordering
-# ---------------------------------------------------------------------------
 
 class TestPliStackOrder:
     def test_constants_length_match(self):

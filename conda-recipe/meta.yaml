@@ -58,10 +58,10 @@ test:
 
 about:
   home: https://github.com/k-georgiou/pharmacon
-  license: Apache-2.0
-  license_family: Apache
+  license: GPL-3.0-only
+  license_family: GPL3
   license_file: LICENSE.txt
-  summary: "Pharmacon: A Molecular Dynamics Analysis Suite."
+  summary: "Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit"
   description: |
     Pharmacon is a pure Python command-line toolkit for analyzing
     molecular-dynamics trajectories and static structures. It persists

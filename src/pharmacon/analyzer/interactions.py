@@ -1,4 +1,6 @@
-"""Pharmacon — Molecular Dynamics Suite, developed by Kyriakos Georgiou, 2026.
+"""
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
 
 Module for analyzing atomic interactions, including hydrophobic and hydrogen bond
 contacts, between molecular structures utilizing atomistic data.

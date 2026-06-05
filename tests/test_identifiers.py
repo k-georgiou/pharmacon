@@ -1,4 +1,7 @@
 """
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
+
 Tests for pharmacon.utils.identifiers:
   generate_mda_blueprint, create_mda_artifact_token, validate_mda_artifact_token
 """
@@ -14,10 +17,6 @@ from pharmacon.utils.identifiers import (
 )
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
 def _make_universe(n_atoms: int = 3, n_frames: int = 1) -> Mda.Universe:
     u = Mda.Universe.empty(
         n_atoms=n_atoms, n_residues=1, n_segments=1,
@@ -31,10 +30,6 @@ def _make_universe(n_atoms: int = 3, n_frames: int = 1) -> Mda.Universe:
     u.load_new(positions, format=MemoryReader)
     return u
 
-
-# ---------------------------------------------------------------------------
-# generate_mda_blueprint — return type and format
-# ---------------------------------------------------------------------------
 
 class TestGenerateMdaBlueprint:
     def test_returns_string_by_default(self):
@@ -86,10 +81,6 @@ class TestGenerateMdaBlueprint:
             generate_mda_blueprint(u=u, id_bits=512)
 
 
-# ---------------------------------------------------------------------------
-# generate_mda_blueprint — determinism
-# ---------------------------------------------------------------------------
-
 class TestBlueprintDeterminism:
     def test_same_universe_same_blueprint(self):
         u1 = _make_universe()
@@ -119,10 +110,6 @@ class TestBlueprintDeterminism:
         bp_relaxed = generate_mda_blueprint(u=u, relax_resids=True)
         assert bp_strict != bp_relaxed
 
-
-# ---------------------------------------------------------------------------
-# create_mda_artifact_token
-# ---------------------------------------------------------------------------
 
 class TestCreateArtifactToken:
     def test_returns_string(self):
@@ -168,10 +155,6 @@ class TestCreateArtifactToken:
         t2 = create_mda_artifact_token(blueprint="bp", secret="sec2")
         assert t1 != t2
 
-
-# ---------------------------------------------------------------------------
-# validate_mda_artifact_token
-# ---------------------------------------------------------------------------
 
 class TestValidateArtifactToken:
     def test_correct_token_validates_true(self):

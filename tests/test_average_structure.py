@@ -1,4 +1,7 @@
 """
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
+
 Tests for pharmacon.analyzer.average_structure —
 avg_st_process_trajectory and extract_trajectory_frame.
 """
@@ -12,10 +15,6 @@ from pharmacon.analyzer.average_structure import (
     extract_trajectory_frame,
 )
 
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 def _make_traj_universe(positions_per_frame):
     """Build a Universe from a list of (n_atoms, 3) position arrays."""
@@ -60,10 +59,6 @@ def static_universe_fresh():
     return _make_traj_universe(frames)
 
 
-# ---------------------------------------------------------------------------
-# avg_st_process_trajectory — validation
-# ---------------------------------------------------------------------------
-
 class TestAvgStValidation:
     def test_negative_reference_frame_raises(self, static_universe):
         u = static_universe
@@ -96,10 +91,6 @@ class TestAvgStValidation:
             avg_st_process_trajectory(u, u.atoms, start=0, stop=4, step=-1)
 
 
-# ---------------------------------------------------------------------------
-# avg_st_process_trajectory — return shapes and types
-# ---------------------------------------------------------------------------
-
 class TestAvgStReturnTypes:
     def test_returns_three_tuple(self, static_universe):
         u = static_universe
@@ -129,10 +120,6 @@ class TestAvgStReturnTypes:
         assert len(rmsd_avg) == 5
         assert len(rmsd_ref) == 5
 
-
-# ---------------------------------------------------------------------------
-# avg_st_process_trajectory — numerical correctness
-# ---------------------------------------------------------------------------
 
 class TestAvgStNumerics:
     def test_identical_frames_zero_rmsd_to_ref(self, static_universe):
@@ -179,10 +166,6 @@ class TestAvgStNumerics:
         assert len(rmsd_avg) == 3
         assert len(rmsd_ref) == 3
 
-
-# ---------------------------------------------------------------------------
-# extract_trajectory_frame — validation only
-# ---------------------------------------------------------------------------
 
 class TestExtractFrameValidation:
     def test_negative_frame_idx_raises(self, tmp_path, static_universe_fresh):

@@ -1,4 +1,7 @@
 """
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
+
 Tests for pharmacon.logger — setup_logger, get_logger, TRACE, PharmaconLogger.
 """
 import logging
@@ -7,10 +10,6 @@ import pytest
 from pharmacon.logger import setup_logger, get_logger, TRACE
 from pharmacon.logger.levels import PharmaconLogger, register
 
-
-# ---------------------------------------------------------------------------
-# TRACE level constant
-# ---------------------------------------------------------------------------
 
 class TestTraceLevelConstant:
     def test_trace_is_5(self):
@@ -26,10 +25,6 @@ class TestTraceLevelConstant:
         assert logging.getLevelName(logging.DEBUG) == "DEBUG"
 
 
-# ---------------------------------------------------------------------------
-# PharmaconLogger class
-# ---------------------------------------------------------------------------
-
 class TestPharmaconLoggerClass:
     def test_is_subclass_of_logger(self):
         assert issubclass(PharmaconLogger, logging.Logger)
@@ -42,10 +37,6 @@ class TestPharmaconLoggerClass:
         register()
         assert logging.getLoggerClass() is PharmaconLogger
 
-
-# ---------------------------------------------------------------------------
-# get_logger
-# ---------------------------------------------------------------------------
 
 class TestGetLogger:
     def test_returns_pharmacon_logger(self):
@@ -74,10 +65,6 @@ class TestGetLogger:
         log2 = get_logger("pharmacon.singleton")
         assert log1 is log2
 
-
-# ---------------------------------------------------------------------------
-# setup_logger — terminal-only (no file I/O)
-# ---------------------------------------------------------------------------
 
 class TestSetupLoggerTerminal:
     def test_returns_pharmacon_logger(self):
@@ -125,10 +112,6 @@ class TestSetupLoggerTerminal:
             setup_logger(terminal=True, terminal_level="verbose", replace=True)
 
 
-# ---------------------------------------------------------------------------
-# setup_logger — file handler
-# ---------------------------------------------------------------------------
-
 class TestSetupLoggerFile:
     def test_file_true_without_path_raises(self):
         with pytest.raises(ValueError, match="log_file"):
@@ -155,10 +138,6 @@ class TestSetupLoggerFile:
             h.flush()
         assert "unique_marker_xyz" in log_file.read_text()
 
-
-# ---------------------------------------------------------------------------
-# PharmaconLogger.trace method
-# ---------------------------------------------------------------------------
 
 class TestTraceMethod:
     def test_trace_called_when_level_trace(self, tmp_path):

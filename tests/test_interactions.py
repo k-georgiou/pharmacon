@@ -1,4 +1,7 @@
 """
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
+
 Aggressive test suite for pharmacon.analyzer.interactions
 
 Tests cover every public and private function with emphasis on:
@@ -39,9 +42,6 @@ from pharmacon.analyzer.interactions import (
     hbonds_process_frame,
 )
 
-# ---------------------------------------------------------------------------
-# Fixtures — real trajectory
-# ---------------------------------------------------------------------------
 
 @pytest.fixture(scope="module")
 def tpr_universe():
@@ -54,10 +54,6 @@ def tpr_xtc_universe():
     """Universe from the real TPR + XTC (with trajectory)."""
     return Mda.Universe(str(TPR_FILE), str(XTC_FILE))
 
-
-# ---------------------------------------------------------------------------
-# Fixtures — synthetic universes with controlled geometry
-# ---------------------------------------------------------------------------
 
 @pytest.fixture(scope="module")
 def two_residue_universe():
@@ -307,10 +303,6 @@ def metal_universe():
     return u
 
 
-# ===========================================================================
-# Tests for _get_chain
-# ===========================================================================
-
 class TestGetChain:
     def test_returns_chain_id(self, tpr_universe):
         protein = tpr_universe.select_atoms("protein")
@@ -325,10 +317,6 @@ class TestGetChain:
         assert result == ""
 
 
-# ===========================================================================
-# Tests for _get_segid
-# ===========================================================================
-
 class TestGetSegid:
     def test_returns_segid(self, tpr_universe):
         protein = tpr_universe.select_atoms("protein")
@@ -341,10 +329,6 @@ class TestGetSegid:
         result = _get_segid(u.atoms, 0)
         assert result == ""
 
-
-# ===========================================================================
-# Tests for _classify_type
-# ===========================================================================
 
 class TestClassifyType:
     def test_water_residue(self):
@@ -375,10 +359,6 @@ class TestClassifyType:
         assert _classify_type("ala", "ca") == "BB"
 
 
-# ===========================================================================
-# Tests for _is_hydrogen
-# ===========================================================================
-
 class TestIsHydrogen:
     def test_hydrogen_true(self, two_residue_universe):
         hn = two_residue_universe.atoms[5]  # HN of res 1
@@ -397,10 +377,6 @@ class TestIsHydrogen:
         assert _is_hydrogen(FakeAtom()) is False
 
 
-# ===========================================================================
-# Tests for _heavy_neighbors
-# ===========================================================================
-
 class TestHeavyNeighbors:
     def test_returns_only_heavy(self, two_residue_universe):
         n_atom = two_residue_universe.atoms[0]  # N has bonds to HN and CA
@@ -414,10 +390,6 @@ class TestHeavyNeighbors:
         heavies = _heavy_neighbors(n_atom)
         assert len(heavies) < len(all_bonded)  # HN excluded
 
-
-# ===========================================================================
-# Tests for _ring_normal_cross
-# ===========================================================================
 
 class TestRingNormalCross:
     def test_planar_ring_has_z_normal(self, ring_universe):
@@ -441,10 +413,6 @@ class TestRingNormalCross:
         normal = _ring_normal_cross(u.atoms)
         assert np.allclose(normal, [0, 0, 1], atol=1e-6)
 
-
-# ===========================================================================
-# Tests for _ring_meta_str
-# ===========================================================================
 
 class TestRingMetaStr:
     def test_returns_9_strings(self, ring_universe):
@@ -484,10 +452,6 @@ class TestRingMetaStr:
         # PHE atoms with ring_mode=True → "SC"
         assert all(t == "SC" for t in types)
 
-
-# ===========================================================================
-# Tests for calculate_hydrophobic_contacts
-# ===========================================================================
 
 class TestHydrophobicContacts:
     def test_returns_tuple_of_tuples(self, two_residue_universe):
@@ -621,10 +585,6 @@ class TestHydrophobicContacts:
             assert int(a2.resid) == rec[16]
 
 
-# ===========================================================================
-# Tests for calculate_hydrogen_bond_contacts
-# ===========================================================================
-
 class TestHydrogenBondContacts:
     def test_returns_tuple_of_tuples(self, hbond_universe):
         g1_acc = hbond_universe.select_atoms("resid 2 and name O")
@@ -754,10 +714,6 @@ class TestHydrogenBondContacts:
         )
         assert len(strict) <= len(loose)
 
-
-# ===========================================================================
-# Tests for calculate_first_degree_water_bridge_contacts — WATER-BRIDGE-1
-# ===========================================================================
 
 class TestWaterBridge1:
     def test_returns_tuple(self, water_bridge_universe):
@@ -893,10 +849,6 @@ class TestWaterBridge1:
         for rec in result:
             assert rec[34] in valid, f"Unexpected label: {rec[34]}"
 
-
-# ===========================================================================
-# Tests for calculate_first_degree_water_bridge_contacts — WATER-BRIDGE-2
-# ===========================================================================
 
 class TestWaterBridge2:
     @pytest.fixture(scope="class")
@@ -1132,10 +1084,6 @@ class TestWaterBridge2:
             assert rec[45] in valid, f"Unexpected label: {rec[45]}"
 
 
-# ===========================================================================
-# Tests for calculate_ionic_contacts
-# ===========================================================================
-
 class TestIonicContacts:
     @pytest.fixture(scope="class")
     def ionic_universe(self):
@@ -1253,10 +1201,6 @@ class TestIonicContacts:
         assert "(G1+)···(G2-)" in labels
         assert "(G1-)···(G2+)" in labels
 
-
-# ===========================================================================
-# Tests for calculate_halogen_bond_contacts
-# ===========================================================================
 
 class TestHalogenBondContacts:
     @pytest.fixture(scope="class")
@@ -1398,10 +1342,6 @@ class TestHalogenBondContacts:
         assert result == ()
 
 
-# ===========================================================================
-# Tests for calculate_pi_stacking_contacts
-# ===========================================================================
-
 class TestPiStackingContacts:
     def test_returns_tuple(self, ring_universe):
         ring1 = [ring_universe.atoms[:6]]
@@ -1493,10 +1433,6 @@ class TestPiStackingContacts:
         assert result == ()
 
 
-# ===========================================================================
-# Tests for calculate_pi_cation_contacts
-# ===========================================================================
-
 class TestPiCationContacts:
     @pytest.fixture(scope="class")
     def pi_cation_universe(self):
@@ -1584,10 +1520,6 @@ class TestPiCationContacts:
         result = calculate_pi_cation_contacts([], [], empty, empty, box=None)
         assert result == ()
 
-
-# ===========================================================================
-# Tests for calculate_metal_contacts
-# ===========================================================================
 
 class TestMetalContacts:
     def test_returns_tuple(self, metal_universe):
@@ -1698,10 +1630,6 @@ class TestMetalContacts:
         assert result == ()
 
 
-# ===========================================================================
-# Tests for deduplicate_interactions
-# ===========================================================================
-
 class TestDeduplicateInteractions:
     def _make_atom_rec(self, label, idx1, resname1, resid1, idx2, resname2, resid2):
         """Build a minimal atom-atom record (21 fields)."""
@@ -1782,10 +1710,6 @@ class TestDeduplicateInteractions:
         result = deduplicate_interactions((rec1, rec2))
         assert result[0] is rec1
 
-
-# ===========================================================================
-# Tests for extract_mode_key
-# ===========================================================================
 
 class TestExtractModeKey:
     def _make_atom_rec(self, label, resname1, resid1, chain1, segid1,
@@ -1926,10 +1850,6 @@ class TestExtractModeKey:
         assert any("extract_mode_key" in msg for msg in caplog.messages)
 
 
-# ===========================================================================
-# Tests for hbonds_process_frame
-# ===========================================================================
-
 class TestHbondsProcessFrame:
     def test_returns_list(self, hbond_universe):
         result = hbonds_process_frame(
@@ -1943,10 +1863,6 @@ class TestHbondsProcessFrame:
         assert len(result) == 1
         assert isinstance(result[0], tuple)
 
-
-# ===========================================================================
-# Tests on real trajectory
-# ===========================================================================
 
 class TestRealTrajectory:
     def test_hydrophobic_on_real_system(self, tpr_universe):

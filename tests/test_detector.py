@@ -1,4 +1,7 @@
 """
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
+
 Test suite for pharmacon.analyzer.detector
 
 Covers all public and private functions with strict assertions on return types,
@@ -40,11 +43,6 @@ from pharmacon.constants.smarts import (
     HALOGEN_PATTERNS,
     HALOGEN_ELEMENTS,
 )
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 
 def _universe_from_mol(mol: Chem.Mol) -> Mda.Universe:
@@ -99,11 +97,6 @@ def _offset_mapping(mol: Chem.Mol, offset: int = 100) -> tuple:
     u.add_TopologyAttr("segids", ["SYS"])
     mapping = {i: i + offset for i in range(n)}
     return u, mapping
-
-
-# ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
 
 
 @pytest.fixture
@@ -210,10 +203,6 @@ def methylamine_mapping(methylamine_mol):
     return _identity_mapping(methylamine_mol)
 
 
-# ---------------------------------------------------------------------------
-# _detect_aromatic_atoms
-# ---------------------------------------------------------------------------
-
 
 class TestDetectAromaticAtoms:
 
@@ -293,11 +282,6 @@ class TestDetectAromaticAtoms:
         assert isinstance(result, list)
         for item in result:
             assert isinstance(item, AtomGroup)
-
-
-# ---------------------------------------------------------------------------
-# _detect_metal_atoms
-# ---------------------------------------------------------------------------
 
 
 class TestDetectMetalAtoms:
@@ -385,11 +369,6 @@ class TestDetectMetalAtoms:
         mapping = _identity_mapping(mol)
         result = _detect_metal_atoms(u, mol, mapping)
         assert isinstance(result, AtomGroup)
-
-
-# ---------------------------------------------------------------------------
-# _detect_atoms_by_smarts
-# ---------------------------------------------------------------------------
 
 
 class TestDetectAtomsBySmarts:
@@ -566,11 +545,6 @@ class TestDetectAtomsBySmarts:
         assert len(indices) == len(set(indices))
 
 
-# ---------------------------------------------------------------------------
-# _log_count
-# ---------------------------------------------------------------------------
-
-
 class TestLogCount:
 
     def test_log_count_does_not_raise(self):
@@ -584,11 +558,6 @@ class TestLogCount:
 
     def test_log_count_large(self):
         _log_count("Large", 999999)
-
-
-# ---------------------------------------------------------------------------
-# detect_hydrophobic_atoms (public wrapper)
-# ---------------------------------------------------------------------------
 
 
 class TestDetectHydrophobicAtoms:
@@ -617,11 +586,6 @@ class TestDetectHydrophobicAtoms:
         allowed = {e.upper() for e in HYDROPHOBIC_ELEMENTS}
         for atom in ag:
             assert atom.element.upper() in allowed
-
-
-# ---------------------------------------------------------------------------
-# detect_hydrogen_bond_acceptor_atoms (public wrapper)
-# ---------------------------------------------------------------------------
 
 
 class TestDetectHydrogenBondAcceptorAtoms:
@@ -653,11 +617,6 @@ class TestDetectHydrogenBondAcceptorAtoms:
             assert atom.element.upper() in allowed
 
 
-# ---------------------------------------------------------------------------
-# detect_hydrogen_bond_donor_atoms (public wrapper)
-# ---------------------------------------------------------------------------
-
-
 class TestDetectHydrogenBondDonorAtoms:
 
     def test_returns_atomgroup(self, ethanol_universe, ethanol_mol, ethanol_mapping):
@@ -686,11 +645,6 @@ class TestDetectHydrogenBondDonorAtoms:
             assert atom.element.upper() in allowed
 
 
-# ---------------------------------------------------------------------------
-# detect_positive_charge_atoms (public wrapper)
-# ---------------------------------------------------------------------------
-
-
 class TestDetectPositiveChargeAtoms:
 
     def test_returns_atomgroup(self, ethanol_universe, ethanol_mol, ethanol_mapping):
@@ -717,11 +671,6 @@ class TestDetectPositiveChargeAtoms:
             detect_positive_charge_atoms(ethanol_universe, ethanol_mol, {999: 999})
 
 
-# ---------------------------------------------------------------------------
-# detect_negative_charge_atoms (public wrapper)
-# ---------------------------------------------------------------------------
-
-
 class TestDetectNegativeChargeAtoms:
 
     def test_returns_atomgroup(self, ethanol_universe, ethanol_mol, ethanol_mapping):
@@ -746,11 +695,6 @@ class TestDetectNegativeChargeAtoms:
     def test_invalid_mapping_raises(self, ethanol_universe, ethanol_mol):
         with pytest.raises(RuntimeError):
             detect_negative_charge_atoms(ethanol_universe, ethanol_mol, {999: 999})
-
-
-# ---------------------------------------------------------------------------
-# detect_halogen_atoms (public wrapper)
-# ---------------------------------------------------------------------------
 
 
 class TestDetectHalogenAtoms:
@@ -806,11 +750,6 @@ class TestDetectHalogenAtoms:
             assert atom.element.upper() in allowed
 
 
-# ---------------------------------------------------------------------------
-# detect_aromatic_atoms (public wrapper)
-# ---------------------------------------------------------------------------
-
-
 class TestDetectAromaticAtomsPublic:
 
     def test_returns_list(self, benzene_universe, benzene_mol, benzene_mapping):
@@ -836,11 +775,6 @@ class TestDetectAromaticAtomsPublic:
     def test_invalid_mapping_raises(self, benzene_universe, benzene_mol):
         with pytest.raises(RuntimeError):
             detect_aromatic_atoms(benzene_universe, benzene_mol, {999: 999})
-
-
-# ---------------------------------------------------------------------------
-# detect_metal_atoms (public wrapper)
-# ---------------------------------------------------------------------------
 
 
 class TestDetectMetalAtomsPublic:
@@ -875,11 +809,6 @@ class TestDetectMetalAtomsPublic:
             detect_metal_atoms(ethanol_universe, ethanol_mol, {999: 999})
 
 
-# ---------------------------------------------------------------------------
-# Mapping direction normalization (shared logic)
-# ---------------------------------------------------------------------------
-
-
 class TestMappingNormalization:
 
     def test_rdkit_to_mda_identity(self, benzene_universe, benzene_mol):
@@ -903,11 +832,6 @@ class TestMappingNormalization:
         bad = {-1: 0, -2: 1}
         result = _detect_aromatic_atoms(benzene_universe, benzene_mol, bad)
         assert isinstance(result, list)
-
-
-# ---------------------------------------------------------------------------
-# Edge cases & cross-cutting
-# ---------------------------------------------------------------------------
 
 
 class TestEdgeCases:

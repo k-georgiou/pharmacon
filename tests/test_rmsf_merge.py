@@ -1,4 +1,7 @@
 """
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
+
 Tests for the RMSF merge pipeline (`merge results` subcommand).
 
 Drives `merge_results.run()` directly, bypassing `validate()` so the
@@ -46,10 +49,6 @@ def _run_merge(inputs, output, *, tmp_path, max_warnings=100,
     return output
 
 
-# ---------------------------------------------------------------------------
-# Happy path: two identical inputs
-# ---------------------------------------------------------------------------
-
 class TestHappyPath:
     def test_merged_file_is_created(self, tmp_path):
         a = build_rmsf_pta(tmp_path / "a.pta")
@@ -84,10 +83,6 @@ class TestHappyPath:
         assert data["calpha"]["n"].tolist() == [2, 2, 2]
 
 
-# ---------------------------------------------------------------------------
-# Mean / std arithmetic with non-identical inputs
-# ---------------------------------------------------------------------------
-
 class TestArithmetic:
     def test_mean_std_across_two_distinct_inputs(self, tmp_path):
         # Same atom keys in both inputs but different RMSF values.
@@ -112,10 +107,6 @@ class TestArithmetic:
         assert data["calpha"]["n"].tolist() == [2, 2]
 
 
-# ---------------------------------------------------------------------------
-# Numeric types preserved (regression for merge_per_selection_simple)
-# ---------------------------------------------------------------------------
-
 class TestTypePreservation:
     def test_atom_index_and_resid_remain_ints(self, tmp_path):
         a = build_rmsf_pta(tmp_path / "a.pta")
@@ -130,10 +121,6 @@ class TestTypePreservation:
         assert isinstance(rec["resname"], str)
         assert isinstance(rec["atom_name"], str)
 
-
-# ---------------------------------------------------------------------------
-# Per-selection attrs propagate
-# ---------------------------------------------------------------------------
 
 class TestAttrPropagation:
     def test_fitting_group_and_frame_range_carry_over(self, tmp_path):
@@ -164,10 +151,6 @@ class TestAttrPropagation:
         assert attrs["n_atoms"] == "3"
 
 
-# ---------------------------------------------------------------------------
-# Strict key intersection
-# ---------------------------------------------------------------------------
-
 class TestKeyIntersection:
     def test_atom_only_in_one_input_is_dropped(self, tmp_path):
         # B has an extra atom that A lacks → must be dropped
@@ -190,10 +173,6 @@ class TestKeyIntersection:
         assert len(data["calpha"]["atom_indices"]) == 2
         assert set(data["calpha"]["atom_indices"].tolist()) == {0, 4}
 
-
-# ---------------------------------------------------------------------------
-# File-level metadata
-# ---------------------------------------------------------------------------
 
 class TestFileMetadata:
     def test_merged_marker_set(self, tmp_path):

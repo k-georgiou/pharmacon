@@ -1,4 +1,7 @@
 """
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
+
 Tests for pharmacon.command_line.dispatcher.dispatch
 """
 import sys
@@ -9,10 +12,6 @@ from pharmacon.command_line.dispatcher import dispatch
 from pharmacon.command_line.base import CommandSpec, SubcommandSpec
 from pharmacon.command_line.exceptions import ValidationError
 
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 def _make_registry(*, validate_raises=None, run_raises=None):
     """Build a minimal mock registry with one command and one subcommand."""
@@ -45,10 +44,6 @@ def _make_registry(*, validate_raises=None, run_raises=None):
     return registry, mock_run, mock_validate
 
 
-# ---------------------------------------------------------------------------
-# Top-level help
-# ---------------------------------------------------------------------------
-
 class TestTopLevelHelp:
     @patch("pharmacon.command_line.dispatcher.fmt.print_top_level_help")
     def test_empty_argv_shows_top_level_help(self, mock_help):
@@ -75,10 +70,6 @@ class TestTopLevelHelp:
         mock_help.assert_called_once()
 
 
-# ---------------------------------------------------------------------------
-# Command-level help
-# ---------------------------------------------------------------------------
-
 class TestCommandHelp:
     @patch("pharmacon.command_line.dispatcher.fmt.print_command_help")
     def test_command_only_shows_command_help(self, mock_help):
@@ -92,10 +83,6 @@ class TestCommandHelp:
         dispatch(["test-cmd", "-h"], registry, "pharmacon")
         mock_help.assert_called_once()
 
-
-# ---------------------------------------------------------------------------
-# Error paths
-# ---------------------------------------------------------------------------
 
 class TestDispatchErrors:
     @patch("pharmacon.command_line.dispatcher.fmt.print_error")
@@ -139,10 +126,6 @@ class TestDispatchErrors:
             dispatch(["test-cmd", "test-sub"], registry, "pharmacon")
         assert exc_info.value.code == 130
 
-
-# ---------------------------------------------------------------------------
-# Successful dispatch
-# ---------------------------------------------------------------------------
 
 class TestDispatchSuccess:
     @patch("pharmacon.command_line.dispatcher.fmt.print_error")

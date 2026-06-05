@@ -1,4 +1,7 @@
 """
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
+
 Aggressive test suite for pharmacon.utils.mda
 
 Tests cover every public and private function in mda.py with emphasis on
@@ -39,10 +42,6 @@ from pharmacon.constants.smarts import (
     METAL_ELEMENTS,
 )
 
-
-# ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
 
 @pytest.fixture(scope="module")
 def tpr_universe():
@@ -101,10 +100,6 @@ def empty_universe():
     return Mda.Universe.empty(0)
 
 
-# ===================================================================
-# _canonical
-# ===================================================================
-
 class TestCanonical:
     def test_single_letter_valid(self):
         assert _canonical("C") == "C"
@@ -154,10 +149,6 @@ class TestCanonical:
         # digits as symbol -> first char upper + rest lower -> not in periodic table
         assert _canonical("123") is None
 
-
-# ===================================================================
-# _guess_element_from_mass
-# ===================================================================
 
 class TestGuessElementFromMass:
     def test_hydrogen(self):
@@ -228,10 +219,6 @@ class TestGuessElementFromMass:
     def test_custom_threshold_wide(self):
         assert _guess_element_from_mass(12.5, threshold=1.0) == "C"
 
-
-# ===================================================================
-# _guess_element_from_name
-# ===================================================================
 
 class TestGuessElementFromName:
     # --- empty / trivial ---
@@ -365,10 +352,6 @@ class TestGuessElementFromName:
         assert _guess_element_from_name("CB", aa) == "C"
 
 
-# ===================================================================
-# create_universe
-# ===================================================================
-
 class TestCreateUniverse:
     def test_topology_only(self):
         u, elements = create_universe(str(TPR_FILE))
@@ -433,10 +416,6 @@ class TestCreateUniverse:
         for e in elements:
             assert e in valid, f"Invalid element symbol: {e!r}"
 
-
-# ===================================================================
-# convert_mda_to_rdkit
-# ===================================================================
 
 class TestConvertMdaToRdkit:
     """Aggressive tests for the MDA->RDKit converter and its index mapping."""
@@ -812,10 +791,6 @@ class TestConvertMdaToRdkit:
             assert mda_atom.element == "O"
 
 
-# ===================================================================
-# has_residues / has_atoms / require_atoms / require_residues
-# ===================================================================
-
 class TestHasResidues:
     def test_universe_with_residues(self, small_universe):
         assert has_residues(small_universe) is True
@@ -874,10 +849,6 @@ class TestRequireResidues:
     def test_passes_with_atomgroup(self, small_universe):
         require_residues(small_universe.atoms)
 
-
-# ===================================================================
-# Integration: create_universe + convert_mda_to_rdkit pipeline
-# ===================================================================
 
 class TestIntegration:
     def test_full_pipeline_protein(self):

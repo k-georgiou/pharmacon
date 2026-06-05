@@ -1,4 +1,8 @@
-"""Tests for command_line.plot.pta.validate() against a mock PTA.
+"""
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
+
+Tests for command_line.plot.pta.validate() against a mock PTA.
 
 Verifies the happy path and the five tamper/missing-metadata failure modes.
 """
@@ -35,10 +39,6 @@ def _make_args(*, input_pta: Path, output_dir: Path, log_path: Path,
     )
 
 
-# ---------------------------------------------------------------------------
-# Happy path
-# ---------------------------------------------------------------------------
-
 class TestHappyPath:
     def test_clean_mock_pta_passes(self, tmp_path):
         pta = build_pli_pta(tmp_path / "pli.pta", n_frames=50)
@@ -71,10 +71,6 @@ class TestHappyPath:
         # At least one section parsed from the INI
         assert len(args.config_overrides) >= 1
 
-
-# ---------------------------------------------------------------------------
-# Failure paths — corrupt the PTA in distinct ways
-# ---------------------------------------------------------------------------
 
 def _open_attrs(path: Path):
     return h5py.File(path, "a")
@@ -153,10 +149,6 @@ class TestValidationFailures:
         with pytest.raises(ValidationError, match="artifact_status is 'FAILED'"):
             validate(args)
 
-
-# ---------------------------------------------------------------------------
-# Version-ordering: file < runtime passes; file > runtime fails clearly
-# ---------------------------------------------------------------------------
 
 class TestVersionOrdering:
     def test_old_file_validates_against_newer_runtime(self, tmp_path):

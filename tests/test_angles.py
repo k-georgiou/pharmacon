@@ -1,4 +1,7 @@
 """
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
+
 Test suite for pharmacon.analyzer.angles
 
 Covers all public and private functions with strict assertions on return values,
@@ -26,11 +29,6 @@ from pharmacon.analyzer.angles import (
 )
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
 def _make_universe(positions, names=None, resnames=None):
     """Build a Universe with atoms at exact positions."""
     n = len(positions)
@@ -50,11 +48,6 @@ def _make_universe(positions, names=None, resnames=None):
     u.add_TopologyAttr("segids", ["SYS"])
     u.atoms.positions = np.array(positions, dtype=np.float32)
     return u
-
-
-# ---------------------------------------------------------------------------
-# Fixtures — universes with known geometry
-# ---------------------------------------------------------------------------
 
 
 @pytest.fixture
@@ -138,11 +131,6 @@ def coincident_universe():
     ])
 
 
-# ---------------------------------------------------------------------------
-# _displacement
-# ---------------------------------------------------------------------------
-
-
 class TestDisplacement:
 
     def test_basic_displacement(self, two_atom_universe):
@@ -178,11 +166,6 @@ class TestDisplacement:
         a0, a1 = two_atom_universe.atoms
         v = _displacement(a0, a1, None)
         assert v.dtype == np.float64 or v.dtype == np.float32
-
-
-# ---------------------------------------------------------------------------
-# calculate_angle_between_vectors
-# ---------------------------------------------------------------------------
 
 
 class TestCalculateAngleBetweenVectors:
@@ -249,11 +232,6 @@ class TestCalculateAngleBetweenVectors:
             assert abs(result - angle_deg) < 0.1
 
 
-# ---------------------------------------------------------------------------
-# calculate_angle_3_atoms
-# ---------------------------------------------------------------------------
-
-
 class TestCalculateAngle3Atoms:
 
     def test_right_angle(self, right_angle_universe):
@@ -309,11 +287,6 @@ class TestCalculateAngle3Atoms:
         assert abs(angle - 90.0) < 1e-3
 
 
-# ---------------------------------------------------------------------------
-# calculate_dihedral_angle
-# ---------------------------------------------------------------------------
-
-
 class TestCalculateDihedralAngle:
 
     def test_cis_dihedral_zero(self, four_atom_planar_universe):
@@ -352,11 +325,6 @@ class TestCalculateDihedralAngle:
         a1, a2, a3, a4 = four_atom_planar_universe.atoms
         angle = calculate_dihedral_angle(a1, a2, a3, a4, box=box)
         assert isinstance(angle, float)
-
-
-# ---------------------------------------------------------------------------
-# _parse_vector_spec
-# ---------------------------------------------------------------------------
 
 
 class TestParseVectorSpec:
@@ -401,11 +369,6 @@ class TestParseVectorSpec:
     def test_atom_selection_zero_atoms_raises(self, two_atom_universe):
         with pytest.raises(GeometrySpecError, match="exactly 2 atoms"):
             _parse_vector_spec(two_atom_universe, "name NONEXISTENT")
-
-
-# ---------------------------------------------------------------------------
-# create_mda_angle_selections
-# ---------------------------------------------------------------------------
 
 
 class TestCreateMdaAngleSelections:
@@ -455,11 +418,6 @@ class TestCreateMdaAngleSelections:
             create_mda_angle_selections(two_atom_universe, "name NONEXISTENT")
 
 
-# ---------------------------------------------------------------------------
-# _ordered_names_from_selection_string
-# ---------------------------------------------------------------------------
-
-
 class TestOrderedNamesFromSelectionString:
 
     def test_basic_extraction(self):
@@ -502,11 +460,6 @@ class TestOrderedNamesFromSelectionString:
     def test_alphanumeric_names(self):
         result = _ordered_names_from_selection_string("name C1 or name H2_A")
         assert result == ["C1", "H2_A"]
-
-
-# ---------------------------------------------------------------------------
-# _reorder_ag_by_names
-# ---------------------------------------------------------------------------
 
 
 class TestReorderAgByNames:
@@ -558,11 +511,6 @@ class TestReorderAgByNames:
         reordered = _reorder_ag_by_names(ag, ["CG", "CB", "CA"])
         for atom in reordered:
             np.testing.assert_allclose(atom.position, original_pos[atom.name], atol=1e-6)
-
-
-# ---------------------------------------------------------------------------
-# calculate_frame_angles
-# ---------------------------------------------------------------------------
 
 
 class TestCalculateFrameAngles:
@@ -690,11 +638,6 @@ class TestCalculateFrameAngles:
         spec = {"type": "angle", "atoms": right_angle_universe.atoms, "spec_str": ""}
         results = calculate_frame_angles([spec], ["boxed"], box=box)
         assert abs(results[0][2] - 90.0) < 1e-2
-
-
-# ---------------------------------------------------------------------------
-# Edge cases & integration
-# ---------------------------------------------------------------------------
 
 
 class TestEdgeCases:

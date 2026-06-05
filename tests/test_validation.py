@@ -1,4 +1,7 @@
 """
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
+
 Tests for pharmacon.utils.validation — all 11 public functions.
 """
 import pytest
@@ -19,10 +22,6 @@ from pharmacon.utils.validation import (
 )
 from pharmacon.command_line.exceptions import ValidationError
 
-
-# ---------------------------------------------------------------------------
-# normalize_path
-# ---------------------------------------------------------------------------
 
 class TestNormalizePath:
     def test_string_returns_path(self):
@@ -67,10 +66,6 @@ class TestNormalizePath:
             normalize_path("/tmp/bad\rfile", "path")
 
 
-# ---------------------------------------------------------------------------
-# validate_existing_input_file
-# ---------------------------------------------------------------------------
-
 class TestValidateExistingInputFile:
     def test_valid_file_returns_resolved_path(self, tmp_path):
         f = tmp_path / "topology.tpr"
@@ -104,10 +99,6 @@ class TestValidateExistingInputFile:
         with pytest.raises(ValidationError, match="not a regular file"):
             validate_existing_input_file(tmp_path, "topology", ("",))
 
-
-# ---------------------------------------------------------------------------
-# validate_output_file
-# ---------------------------------------------------------------------------
 
 class TestValidateOutputFile:
     def test_new_file_accepted(self, tmp_path):
@@ -147,10 +138,6 @@ class TestValidateOutputFile:
             validate_output_file(tmp_path, "output", overwrite=False)
 
 
-# ---------------------------------------------------------------------------
-# normalize_selection
-# ---------------------------------------------------------------------------
-
 class TestNormalizeSelection:
     def test_valid_string_returned(self):
         result = normalize_selection("protein", "sel", required=True)
@@ -189,10 +176,6 @@ class TestNormalizeSelection:
         assert result is None
 
 
-# ---------------------------------------------------------------------------
-# validate_string_list
-# ---------------------------------------------------------------------------
-
 class TestValidateStringList:
     def test_valid_list_returned(self):
         result = validate_string_list(["alpha", "beta"], "labels")
@@ -219,10 +202,6 @@ class TestValidateStringList:
             validate_string_list(["alpha", "   "], "labels")
 
 
-# ---------------------------------------------------------------------------
-# validate_non_negative_int
-# ---------------------------------------------------------------------------
-
 class TestValidateNonNegativeInt:
     @pytest.mark.parametrize("val", [0, 1, 100])
     def test_valid_values(self, val):
@@ -244,10 +223,6 @@ class TestValidateNonNegativeInt:
         with pytest.raises(ValidationError):
             validate_non_negative_int("1", "n")
 
-
-# ---------------------------------------------------------------------------
-# validate_positive_int
-# ---------------------------------------------------------------------------
 
 class TestValidatePositiveInt:
     @pytest.mark.parametrize("val", [1, 2, 999])
@@ -271,10 +246,6 @@ class TestValidatePositiveInt:
             validate_positive_int(1.0, "n")
 
 
-# ---------------------------------------------------------------------------
-# validate_bool_flag
-# ---------------------------------------------------------------------------
-
 class TestValidateBoolFlag:
     def test_true_accepted(self):
         assert validate_bool_flag(True, "flag") is True
@@ -287,10 +258,6 @@ class TestValidateBoolFlag:
         with pytest.raises(ValidationError, match="boolean"):
             validate_bool_flag(bad, "flag")
 
-
-# ---------------------------------------------------------------------------
-# validate_logging_level
-# ---------------------------------------------------------------------------
 
 class TestValidateLoggingLevel:
     @pytest.mark.parametrize("level", ["TRACE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"])
@@ -311,10 +278,6 @@ class TestValidateLoggingLevel:
         with pytest.raises(ValidationError):
             validate_logging_level(10, "level")
 
-
-# ---------------------------------------------------------------------------
-# validate_frame_range
-# ---------------------------------------------------------------------------
 
 class TestValidateFrameRange:
     def test_valid_defaults(self):
@@ -368,10 +331,6 @@ class TestValidateFrameRange:
         assert end is None
         assert step == 1
 
-
-# ---------------------------------------------------------------------------
-# validate_reference_frame
-# ---------------------------------------------------------------------------
 
 class TestValidateReferenceFrame:
     def test_valid_reference_frame(self):

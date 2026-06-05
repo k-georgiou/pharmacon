@@ -1,4 +1,8 @@
-"""Mock PTA builders for the plot-module test suite.
+"""
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
+
+Mock PTA builders for the plot-module test suite.
 
 Each builder produces a fully-valid PTA file (signed, tokenized, completed
 groups) that passes `command_line/plot/pta.py::validate()`. Builders write

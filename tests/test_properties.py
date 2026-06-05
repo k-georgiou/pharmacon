@@ -1,4 +1,7 @@
 """
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
+
 Tests for pharmacon.analyzer.properties — RDKit-based molecular descriptors.
 
 All tests use benzene (SMILES: c1ccccc1) as the reference molecule because its
@@ -29,10 +32,6 @@ from pharmacon.analyzer.properties import (
 )
 
 
-# ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
-
 @pytest.fixture(scope="module")
 def benzene():
     """Benzene with explicit hydrogens — c1ccccc1, MW ≈ 78.11."""
@@ -54,10 +53,6 @@ def alanine():
     return Chem.AddHs(mol)
 
 
-# ---------------------------------------------------------------------------
-# Element counts
-# ---------------------------------------------------------------------------
-
 class TestElementCounts:
     def test_benzene_has_only_C_and_H(self, benzene):
         counts = get_element_counts(benzene)
@@ -77,10 +72,6 @@ class TestElementCounts:
         assert isinstance(get_element_counts(benzene), dict)
 
 
-# ---------------------------------------------------------------------------
-# Total atom count
-# ---------------------------------------------------------------------------
-
 class TestCountTotalAtoms:
     def test_benzene_12_atoms(self, benzene):
         assert count_total_atoms(benzene) == 12
@@ -88,10 +79,6 @@ class TestCountTotalAtoms:
     def test_returns_int(self, benzene):
         assert isinstance(count_total_atoms(benzene), int)
 
-
-# ---------------------------------------------------------------------------
-# Molecular weight
-# ---------------------------------------------------------------------------
 
 class TestMolecularWeight:
     def test_benzene_weight_approx_78(self, benzene):
@@ -105,10 +92,6 @@ class TestMolecularWeight:
         assert get_molecular_weight(ethanol) > 18.0
 
 
-# ---------------------------------------------------------------------------
-# LogP
-# ---------------------------------------------------------------------------
-
 class TestLogP:
     def test_benzene_logp_positive(self, benzene):
         assert get_logp(benzene) > 0
@@ -120,10 +103,6 @@ class TestLogP:
         assert isinstance(get_logp(benzene), float)
 
 
-# ---------------------------------------------------------------------------
-# TPSA
-# ---------------------------------------------------------------------------
-
 class TestTPSA:
     def test_benzene_tpsa_zero(self, benzene):
         assert get_tpsa(benzene) == 0.0
@@ -134,10 +113,6 @@ class TestTPSA:
     def test_returns_float(self, benzene):
         assert isinstance(get_tpsa(benzene), float)
 
-
-# ---------------------------------------------------------------------------
-# Rings
-# ---------------------------------------------------------------------------
 
 class TestRings:
     def test_benzene_one_ring(self, benzene):
@@ -153,10 +128,6 @@ class TestRings:
         assert get_number_of_aromatic_rings(ethanol) == 0
 
 
-# ---------------------------------------------------------------------------
-# Rotatable bonds
-# ---------------------------------------------------------------------------
-
 class TestRotatableBonds:
     def test_benzene_no_rotatable_bonds(self, benzene):
         assert get_num_rotatable_bonds(benzene) == 0
@@ -167,10 +138,6 @@ class TestRotatableBonds:
     def test_returns_int(self, benzene):
         assert isinstance(get_num_rotatable_bonds(benzene), int)
 
-
-# ---------------------------------------------------------------------------
-# Stereocentres & net charge
-# ---------------------------------------------------------------------------
 
 class TestStereoAndCharge:
     def test_benzene_no_stereocentres(self, benzene):
@@ -186,10 +153,6 @@ class TestStereoAndCharge:
         assert isinstance(get_stereo_centers(benzene), int)
 
 
-# ---------------------------------------------------------------------------
-# Molecular volume
-# ---------------------------------------------------------------------------
-
 class TestMolecularVolume:
     def test_benzene_volume_positive(self, benzene):
         mol = Chem.MolFromSmiles("c1ccccc1")
@@ -204,10 +167,6 @@ class TestMolecularVolume:
         AllChem.EmbedMolecule(mol, AllChem.ETKDGv3())
         assert isinstance(get_molecular_volume(mol), float)
 
-
-# ---------------------------------------------------------------------------
-# Fingerprints
-# ---------------------------------------------------------------------------
 
 class TestFingerprints:
     def test_morgan_fingerprint_not_none(self, benzene):
@@ -241,10 +200,6 @@ class TestFingerprints:
         fp_e = fingerprint_to_string(generate_morgan_fingerprint(ethanol))
         assert fp_b != fp_e
 
-
-# ---------------------------------------------------------------------------
-# Fragment counts
-# ---------------------------------------------------------------------------
 
 class TestFragmentCounts:
     def test_returns_dict(self, benzene):

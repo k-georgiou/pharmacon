@@ -1,4 +1,7 @@
 """
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
+
 Tests for pharmacon.fileio.pta.PharmaconPTAFile
 """
 import json
@@ -8,17 +11,9 @@ import numpy as np
 from pharmacon.fileio.pta import PharmaconPTAFile
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
 def _open(path, mode="a"):
     return PharmaconPTAFile(path, mode=mode)
 
-
-# ---------------------------------------------------------------------------
-# Schema constants
-# ---------------------------------------------------------------------------
 
 class TestSchemaConstants:
     def test_interaction_columns_length(self):
@@ -56,10 +51,6 @@ class TestSchemaConstants:
         assert "water1_index" in fields
         assert "water2_index" in fields
 
-
-# ---------------------------------------------------------------------------
-# write_frame_interactions / read_frame_interactions
-# ---------------------------------------------------------------------------
 
 class TestFrameInteractionsRoundtrip:
     def test_write_and_read_empty_interactions(self, tmp_path):
@@ -110,10 +101,6 @@ class TestFrameInteractionsRoundtrip:
             result = f.read_frame_interactions(frame_index=0, group_name="pl_interactions")
         assert result[0] == rec
 
-
-# ---------------------------------------------------------------------------
-# write_frame_interactions — error paths
-# ---------------------------------------------------------------------------
 
 class TestFrameInteractionsErrors:
     def test_negative_frame_index_raises(self, tmp_path):

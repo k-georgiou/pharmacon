@@ -1,4 +1,7 @@
 """
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
+
 Tests for pharmacon.analyzer.distances.calculate_frame_distances
 """
 import pytest
@@ -7,10 +10,6 @@ import MDAnalysis as Mda
 
 from pharmacon.analyzer.distances import calculate_frame_distances
 
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 def _make_universe(positions, masses=None):
     """Build a minimal Universe with atoms placed at exact coordinates."""
@@ -71,10 +70,6 @@ def weighted_universe():
     )
 
 
-# ---------------------------------------------------------------------------
-# Return format
-# ---------------------------------------------------------------------------
-
 class TestReturnFormat:
     def test_returns_list_of_tuples(self, two_atom_universe):
         u = two_atom_universe
@@ -119,10 +114,6 @@ class TestReturnFormat:
         result = calculate_frame_distances([], [], [], [], box=None)
         assert result == []
 
-
-# ---------------------------------------------------------------------------
-# Distance methods
-# ---------------------------------------------------------------------------
 
 class TestDistanceMethods:
     def test_com_single_atoms(self, two_atom_universe):
@@ -193,10 +184,6 @@ class TestDistanceMethods:
         )
         np.testing.assert_allclose(result[0][2], 5.0, atol=1e-4)
 
-
-# ---------------------------------------------------------------------------
-# Validation / error paths
-# ---------------------------------------------------------------------------
 
 class TestDistancesValidation:
     def test_unequal_group1_length_raises(self, two_atom_universe):

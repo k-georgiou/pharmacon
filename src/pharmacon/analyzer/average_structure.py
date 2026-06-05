@@ -1,12 +1,9 @@
-"""Pharmacon — Molecular Dynamics Suite, developed by Kyriakos Georgiou, 2026.
+"""
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
 
 A module for processing molecular dynamics trajectories, including operations
 such as structure averaging, alignment, and frame extraction.
-
-This module defines essential functionalities for analyzing molecular dynamics
-simulations performed using the MDAnalysis library. It includes methods for
-trajectory processing, averaging atom positions, calculating RMSD metrics, and
-extracting specific frames from simulations for further analysis or visualization.
 """
 
 

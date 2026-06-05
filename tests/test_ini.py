@@ -1,4 +1,7 @@
 """
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
+
 Tests for pharmacon.utils.ini — read_ini and namespace_to_dict
 """
 import pytest
@@ -8,18 +11,11 @@ from types import SimpleNamespace
 from pharmacon.utils.ini import read_ini, namespace_to_dict
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
 def _write_ini(path: Path, content: str) -> Path:
     path.write_text(content, encoding="utf-8")
     return path
 
 
-# ---------------------------------------------------------------------------
-# read_ini — file existence
-# ---------------------------------------------------------------------------
 
 class TestReadIniFileErrors:
     def test_missing_file_raises_file_not_found(self, tmp_path):
@@ -31,10 +27,6 @@ class TestReadIniFileErrors:
         result = read_ini(ini)
         assert isinstance(result, SimpleNamespace)
 
-
-# ---------------------------------------------------------------------------
-# read_ini — scalar coercion
-# ---------------------------------------------------------------------------
 
 class TestScalarCoercion:
     def test_integer_coerced(self, tmp_path):
@@ -78,10 +70,6 @@ class TestScalarCoercion:
         assert ns.s.v == ""
 
 
-# ---------------------------------------------------------------------------
-# read_ini — list values
-# ---------------------------------------------------------------------------
-
 class TestListValues:
     def test_comma_separated_list(self, tmp_path):
         ini = _write_ini(tmp_path / "t.ini", "[s]\nv = 1, 2, 3\n")
@@ -93,10 +81,6 @@ class TestListValues:
         ns = read_ini(ini)
         assert ns.s.v == ["hello", 42, True]
 
-
-# ---------------------------------------------------------------------------
-# read_ini — nested sections
-# ---------------------------------------------------------------------------
 
 class TestNestedSections:
     def test_top_level_section_accessible(self, tmp_path):
@@ -117,10 +101,6 @@ class TestNestedSections:
         assert ns.A.v == 1
         assert ns.B.v == 2
 
-
-# ---------------------------------------------------------------------------
-# namespace_to_dict
-# ---------------------------------------------------------------------------
 
 class TestNamespaceToDict:
     def test_returns_dict(self, tmp_path):

@@ -1,4 +1,7 @@
 """
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
+
 Tests for the RMSF-specific PTAFile API:
 - write_rmsf_data / read_rmsf_data round-trip
 - _iter_selections helper
@@ -30,10 +33,6 @@ from helpers.mock_pta import (  # noqa: E402
 
 from pharmacon.fileio.pta import PharmaconPTAFile  # noqa: E402
 
-
-# ---------------------------------------------------------------------------
-# Round-trip
-# ---------------------------------------------------------------------------
 
 class TestRoundTrip:
     def test_read_returns_dict_keyed_by_label(self, tmp_path):
@@ -68,10 +67,6 @@ class TestRoundTrip:
         assert np.issubdtype(data["calpha"]["rmsf"].dtype, np.floating)
 
 
-# ---------------------------------------------------------------------------
-# _iter_selections
-# ---------------------------------------------------------------------------
-
 class TestIterSelections:
     def test_yields_sorted_labels(self, tmp_path):
         pta_path = build_rmsf_pta(tmp_path / "rmsf.pta")
@@ -87,10 +82,6 @@ class TestIterSelections:
             labels = list(pta._iter_selections("rmsf"))
         assert "statistics" not in labels
 
-
-# ---------------------------------------------------------------------------
-# Statistics
-# ---------------------------------------------------------------------------
 
 class TestStatistics:
     def test_statistics_table_exists(self, tmp_path):
@@ -139,10 +130,6 @@ class TestStatistics:
         assert {r["label"] for r in recs} == {"calpha", "backbone"}
 
 
-# ---------------------------------------------------------------------------
-# Merged-record schema
-# ---------------------------------------------------------------------------
-
 class TestMergedReadback:
     def test_read_returns_mean_std_n_for_merged_files(self, tmp_path):
         pta_path = build_rmsf_merged_pta(tmp_path / "merged.pta", std_value=0.15)
@@ -156,10 +143,6 @@ class TestMergedReadback:
         assert entry["std"].tolist() == [0.15, 0.15, 0.15]
         assert entry["n"].tolist() == [2, 2, 2]
 
-
-# ---------------------------------------------------------------------------
-# CSV / TSV exporters
-# ---------------------------------------------------------------------------
 
 class TestExporters:
     def test_csv_non_merged_columns_and_row_count(self, tmp_path):
@@ -223,10 +206,6 @@ class TestExporters:
             # no decimal, no "True"/"False")
             int(r[1])  # raises if not
 
-
-# ---------------------------------------------------------------------------
-# Error paths
-# ---------------------------------------------------------------------------
 
 class TestErrors:
     def _open(self, path):

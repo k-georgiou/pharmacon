@@ -1,4 +1,7 @@
 """
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
+
 Tests for pharmacon.analyzer.frame_logger.log_every_frame
 
 Note on MemoryReader: MDAnalysis.coordinates.memory.MemoryReader overrides
@@ -21,10 +24,6 @@ from MDAnalysis.coordinates.memory import MemoryReader
 
 from pharmacon.analyzer.frame_logger import log_every_frame
 
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 def _make_universe(n_frames: int) -> Mda.Universe:
     """Minimal single-atom Universe backed by MemoryReader."""
@@ -59,10 +58,6 @@ def _simulate(tap, n_frames: int):
     for f in range(n_frames):
         tap(_make_ts(f, float(f)))
 
-
-# ---------------------------------------------------------------------------
-# Context manager basics (do not depend on transformation pipeline)
-# ---------------------------------------------------------------------------
 
 class TestFrameLoggerContextManager:
     def test_no_exception_on_entry_exit(self):
@@ -108,10 +103,6 @@ class TestFrameLoggerContextManager:
         mock_log.debug.assert_not_called()
 
 
-# ---------------------------------------------------------------------------
-# Logging logic — every=1 (via manual _tap invocation)
-# ---------------------------------------------------------------------------
-
 class TestFrameLoggerEvery1:
     def test_4_frames_produces_4_debug_calls(self):
         # Frames 0-3 manually fed through _tap:
@@ -154,10 +145,6 @@ class TestFrameLoggerEvery1:
         mock_log.debug.assert_not_called()
 
 
-# ---------------------------------------------------------------------------
-# every parameter
-# ---------------------------------------------------------------------------
-
 class TestFrameLoggerEvery:
     def test_every_2_with_5_frames(self):
         # Frames 0-4 (4 "done" frames: 0,1,2,3):
@@ -191,10 +178,6 @@ class TestFrameLoggerEvery:
             _simulate(_tap_fn(u2), 6)
         assert log1.debug.call_count > log2.debug.call_count
 
-
-# ---------------------------------------------------------------------------
-# start / stop slicing
-# ---------------------------------------------------------------------------
 
 class TestFrameLoggerSlice:
     def test_start_limits_logging_to_later_frames(self):

@@ -14,7 +14,7 @@
 
 [![Python](https://img.shields.io/badge/python-%E2%89%A53.12-blue.svg?logo=python&logoColor=white)](https://www.python.org/)
 [![Status](https://img.shields.io/badge/status-alpha-orange.svg)]()
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE.txt)
+[![License](https://img.shields.io/badge/license-GPLv3-blue.svg)](LICENSE.txt)
 [![Powered by MDAnalysis](https://img.shields.io/badge/powered%20by-MDAnalysis-orange.svg?logoWidth=16&logo=data:image/x-icon;base64,AAABAAEAEBAAAAEAIAAoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAA)](https://www.mdanalysis.org/)
 [![Powered by RDKit](https://img.shields.io/badge/powered%20by-RDKit-3838ff.svg?logo=data:image/x-icon;base64,AAABAAEAEBAAAAEAIAAoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAA)](https://www.rdkit.org/)
 [![HDF5](https://img.shields.io/badge/data-HDF5-1572B6.svg?logo=hdf5&logoColor=white)](https://www.hdfgroup.org/solutions/hdf5/)
@@ -1160,4 +1160,12 @@ GitHub: https://github.com/k-georgiou/pharmacon
 
 ## License
 
-See [`LICENSE.txt`](LICENSE.txt).
+Pharmacon is licensed under the **GNU General Public License v3.0 only**
+(GPL-3.0-only). See [`LICENSE.txt`](LICENSE.txt) for the full text, and
+[`NOTICE`](NOTICE) for copyright, citation, and third-party-component
+information.
+
+> **Note on copyleft.** Pharmacon imports MDAnalysis (GPL-2.0-or-later) at
+> runtime, so any distributed combined work is bound by the GPL terms.
+> If you modify Pharmacon and distribute the result, you must release your
+> changes under GPL-3.0-only.

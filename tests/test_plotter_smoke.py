@@ -1,4 +1,8 @@
-"""Layer 5 — end-to-end render smoke tests.
+"""
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
+
+Layer 5 — end-to-end render smoke tests.
 
 Each test renders one plot per family using matplotlib's Agg backend
 (no display) on a mock PTA, then asserts the output file exists and is
@@ -51,10 +55,6 @@ def _assert_nonempty_file_in(out_dir: Path) -> None:
         assert p.stat().st_size > 0, f"empty output file: {p}"
 
 
-# ---------------------------------------------------------------------------
-# PLI stacked column 1 (modes table; non-merged)
-# ---------------------------------------------------------------------------
-
 def test_render_pli_stacked_column_1(tmp_path):
     from pharmacon.plotter.interactions import (
         plot_protein_ligand_interactions_stacked_column_1_from_file,
@@ -78,10 +78,6 @@ def test_render_pli_stacked_column_1(tmp_path):
         )
     _assert_nonempty_file_in(out_dir)
 
-
-# ---------------------------------------------------------------------------
-# PPI heatmap (modes table; non-merged)
-# ---------------------------------------------------------------------------
 
 def test_render_ppi_heatmap(tmp_path):
     from pharmacon.plotter.interactions import (
@@ -107,10 +103,6 @@ def test_render_ppi_heatmap(tmp_path):
     _assert_nonempty_file_in(out_dir)
 
 
-# ---------------------------------------------------------------------------
-# PCA scatter
-# ---------------------------------------------------------------------------
-
 def test_render_pca_scatter(tmp_path):
     from pharmacon.plotter.universal import plot_pca_scatter_from_file
     pta = build_pca_pta(tmp_path / "pca.pta", n_frames=40, n_components=3)
@@ -133,10 +125,6 @@ def test_render_pca_scatter(tmp_path):
     _assert_nonempty_file_in(out_dir)
 
 
-# ---------------------------------------------------------------------------
-# Universal timeseries (RMSD)
-# ---------------------------------------------------------------------------
-
 def test_render_universal_rmsd_timeseries(tmp_path):
     from pharmacon.plotter.universal import plot_pta_timeseries_from_file
     series = {"backbone": [1.0, 1.2, 1.1, 1.3, 1.4, 1.2, 1.1, 1.0]}
@@ -158,10 +146,6 @@ def test_render_universal_rmsd_timeseries(tmp_path):
         )
     _assert_nonempty_file_in(out_dir)
 
-
-# ---------------------------------------------------------------------------
-# RMSF profile (non-merged, per-selection figures)
-# ---------------------------------------------------------------------------
 
 def _rmsf_settings(**overrides):
     base = {

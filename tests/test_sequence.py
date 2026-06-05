@@ -1,4 +1,7 @@
 """
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
+
 Tests for pharmacon.analyzer.sequence — get_sequence and sequence_dict_to_fasta
 """
 import pytest
@@ -7,10 +10,6 @@ import MDAnalysis as Mda
 
 from pharmacon.analyzer.sequence import get_sequence, sequence_dict_to_fasta
 
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 def _make_protein_universe(aa3_list, chainids=None, resids=None):
     """Build a minimal Universe with one CA per residue (protein-like)."""
@@ -32,10 +31,6 @@ def _make_protein_universe(aa3_list, chainids=None, resids=None):
     u.atoms.positions = np.zeros((n, 3), dtype=np.float32)
     return u
 
-
-# ---------------------------------------------------------------------------
-# get_sequence — no chain IDs
-# ---------------------------------------------------------------------------
 
 class TestGetSequenceNoChain:
     def test_result_key_is_no_chainid(self):
@@ -93,10 +88,6 @@ class TestGetSequenceNoChain:
         assert len(result["NO_CHAINID"]["aa3_list"]) == 1
 
 
-# ---------------------------------------------------------------------------
-# get_sequence — with chain IDs
-# ---------------------------------------------------------------------------
-
 class TestGetSequenceWithChains:
     def test_two_chains_produce_two_keys(self):
         u = _make_protein_universe(
@@ -131,10 +122,6 @@ class TestGetSequenceWithChains:
         assert "X" in result
         assert "NO_CHAINID" not in result
 
-
-# ---------------------------------------------------------------------------
-# sequence_dict_to_fasta
-# ---------------------------------------------------------------------------
 
 class TestSequenceDictToFasta:
     @pytest.fixture

@@ -1,4 +1,8 @@
-"""Pharmacon — Molecular Dynamics Suite, developed by Kyriakos Georgiou, 2026.
+"""
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
+
+Pharmacon — Molecular Dynamics Suite, developed by Kyriakos Georgiou, 2026.
 
 Contract tests between ``pharmacon.constants.plots`` settings classes and the
 ``pharmacon.plotter`` modules.
@@ -35,10 +39,6 @@ from pharmacon import plotter as _plotter_pkg
 from pharmacon.constants import plots as _plots_mod
 from pharmacon.constants.plots import PlotSettingsBase
 
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 # Methods/attributes defined on ``PlotSettingsBase`` that plotters legitimately
 # touch through a ``settings`` reference but which aren't dataclass fields.
@@ -101,11 +101,6 @@ def _plotter_files() -> list[Path]:
     return sorted(p for p in root.glob("*.py") if p.name != "__init__.py")
 
 
-# ---------------------------------------------------------------------------
-# 1. Every plotter-file reference must resolve to a real settings field.
-# ---------------------------------------------------------------------------
-
-
 @pytest.mark.parametrize("py_file", _plotter_files(), ids=lambda p: p.name)
 def test_plotter_settings_references_resolve(py_file: Path) -> None:
     used = _collect_settings_attribute_reads(py_file)
@@ -117,10 +112,6 @@ def test_plotter_settings_references_resolve(py_file: Path) -> None:
         f"was renamed without updating the plotter."
     )
 
-
-# ---------------------------------------------------------------------------
-# 2. Every settings class must be constructible and self-validating.
-# ---------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize(
@@ -144,11 +135,6 @@ def test_settings_class_contract(cls: type[PlotSettingsBase]) -> None:
     # validate() is idempotent and leaves the instance in a clean state.
     instance.validate()
     instance.validate()
-
-
-# ---------------------------------------------------------------------------
-# 3. Alias registry uniqueness — fail fast if two classes claim the same key.
-# ---------------------------------------------------------------------------
 
 
 def test_alias_registry_has_no_duplicates() -> None:

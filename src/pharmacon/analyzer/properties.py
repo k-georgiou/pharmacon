@@ -1,4 +1,6 @@
-"""Pharmacon — Molecular Dynamics Suite, developed by Kyriakos Georgiou, 2026.
+"""
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
 
 This module contains functions for reading and parsing chemical file formats such as
 MOL2 and SMILES (.smi), processing molecule data into RDKit molecule objects and

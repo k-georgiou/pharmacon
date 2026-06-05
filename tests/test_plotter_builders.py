@@ -1,4 +1,8 @@
-"""Tests for plot-data builders on mock PTAs.
+"""
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
+
+Tests for plot-data builders on mock PTAs.
 
 Coverage:
   - build_pli_normal_data        (modes/<m>/table; non-merged)
@@ -44,10 +48,6 @@ from pharmacon.plotter.universal import (
     _collect_pca_xy_from_file,
 )
 
-
-# ---------------------------------------------------------------------------
-# build_pli_normal_data
-# ---------------------------------------------------------------------------
 
 class TestBuildPliNormalData:
     def test_basic_shape(self, tmp_path):
@@ -122,10 +122,6 @@ class TestBuildPliNormalData:
         assert resids == sorted(resids)
 
 
-# ---------------------------------------------------------------------------
-# build_pli_merged_stacked_data
-# ---------------------------------------------------------------------------
-
 class TestBuildPliMergedStackedData:
     def test_basic_shape(self, tmp_path):
         pta = build_pli_merged_pta(tmp_path / "pli_merged.pta", n_files=4)
@@ -164,10 +160,6 @@ class TestBuildPliMergedStackedData:
                 )
 
 
-# ---------------------------------------------------------------------------
-# PPI variants — same builders, different group name
-# ---------------------------------------------------------------------------
-
 class TestBuilderForPpi:
     def test_normal_data_works_for_ppi(self, tmp_path):
         pta = build_ppi_pta(tmp_path / "ppi.pta", n_frames=50)
@@ -189,10 +181,6 @@ class TestBuilderForPpi:
             )
         assert values.shape == errors.shape == (len(residues), len(interactions))
 
-
-# ---------------------------------------------------------------------------
-# PCA helpers
-# ---------------------------------------------------------------------------
 
 class TestPcaHelpers:
     def test_get_all_components_sorted_unique(self, tmp_path):
@@ -241,10 +229,6 @@ class TestPcaHelpers:
         assert np.all(np.isfinite(x))
         assert np.all(np.isfinite(y))
 
-
-# ---------------------------------------------------------------------------
-# Universal timeseries fixture (smoke read)
-# ---------------------------------------------------------------------------
 
 class TestUniversalFixturesAreReadable:
     """The actual plot function is hit in the smoke layer. Here we just

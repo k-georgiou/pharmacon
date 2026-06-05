@@ -18,7 +18,7 @@ artifacts, and producing publication-ready plots.
    * - **Version**
      - 1.0.0
    * - **License**
-     - Apache 2.0
+     - GPLv3-only (GNU General Public License v3.0 only)
    * - **Python**
      - ≥ 3.12
    * - **Manuscript**

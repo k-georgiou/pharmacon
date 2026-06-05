@@ -1,4 +1,7 @@
 """
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
+
 Tests for pharmacon.fileio.base.PharmaconHDF5File
 """
 import pytest
@@ -7,10 +10,6 @@ from pathlib import Path
 
 from pharmacon.fileio.base import PharmaconHDF5File, PharmaconHDF5Types
 
-
-# ---------------------------------------------------------------------------
-# Initialization and file creation
-# ---------------------------------------------------------------------------
 
 class TestFileInit:
     def test_create_pta_file(self, tmp_path):
@@ -78,10 +77,6 @@ class TestFileInit:
             assert "test.pta" in repr(f)
 
 
-# ---------------------------------------------------------------------------
-# File-level metadata
-# ---------------------------------------------------------------------------
-
 class TestFileMetadata:
     def test_pharmacon_version_written(self, tmp_path):
         path = tmp_path / "test.pta"
@@ -118,10 +113,6 @@ class TestFileMetadata:
             with pytest.raises(KeyError):
                 f.add_file_metadata({"pharmacon_version": "0.0"}, overwrite=False)
 
-
-# ---------------------------------------------------------------------------
-# Groups
-# ---------------------------------------------------------------------------
 
 class TestGroups:
     def test_create_group(self, tmp_path):
@@ -176,10 +167,6 @@ class TestGroups:
             with pytest.raises(KeyError):
                 f.add_group_metadata(group_name="missing", metadata={"k": "v"})
 
-
-# ---------------------------------------------------------------------------
-# Datasets
-# ---------------------------------------------------------------------------
 
 class TestDatasets:
     def test_create_dataset(self, tmp_path):

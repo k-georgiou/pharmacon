@@ -1,4 +1,8 @@
-"""Tests for the plot INI examples under examples/plot_ini/.
+"""
+Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
+    Copyright© 2026  Kyriakos Georgiou
+
+Tests for the plot INI examples under examples/plot_ini/.
 
 Verifies:
   - Every example INI parses without error and produces a non-empty dict.
@@ -42,10 +46,6 @@ EXAMPLES_DIR = REPO_ROOT / "examples" / "plot_ini"
 ALL_EXAMPLE_INIS = sorted(EXAMPLES_DIR.glob("*.ini"))
 
 
-# ---------------------------------------------------------------------------
-# 1) Every example INI parses
-# ---------------------------------------------------------------------------
-
 class TestExampleInisParse:
     def test_examples_dir_exists(self):
         assert EXAMPLES_DIR.is_dir(), f"missing examples directory: {EXAMPLES_DIR}"
@@ -63,10 +63,6 @@ class TestExampleInisParse:
         sections = {k: v for k, v in d.items() if isinstance(v, dict)}
         assert sections, f"no sections in {ini_path.name}"
 
-
-# ---------------------------------------------------------------------------
-# 2) Scalar coercion on a representative INI
-# ---------------------------------------------------------------------------
 
 class TestScalarCoercion:
     def test_pli_stacked_column_1_coerced(self):
@@ -86,10 +82,6 @@ class TestScalarCoercion:
         if "fig_transparent" in section:
             assert isinstance(section["fig_transparent"], bool)
 
-
-# ---------------------------------------------------------------------------
-# 3) Alias resolution via PlotSettingsBase registry
-# ---------------------------------------------------------------------------
 
 CLASSES_WITH_ALIASES = [
     ProteinLigandInteractionsStackedColumn1PlotSettings,
@@ -141,10 +133,6 @@ class TestAliasResolution:
             )
 
 
-# ---------------------------------------------------------------------------
-# 4) all_plots.ini covers every plot family
-# ---------------------------------------------------------------------------
-
 class TestAllPlotsIni:
     @pytest.fixture(scope="class")
     def all_sections(self):
@@ -165,10 +153,6 @@ class TestAllPlotsIni:
             f"expected one of {sorted(aliases_upper)}"
         )
 
-
-# ---------------------------------------------------------------------------
-# 5) Unknown keys in a section are ignored on from_dict()
-# ---------------------------------------------------------------------------
 
 class TestFromDictTolerance:
     def test_unknown_key_ignored(self):
