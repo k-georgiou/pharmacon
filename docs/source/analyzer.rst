@@ -24,6 +24,22 @@ CLI: ``pharmacon trajectory rmsd``
 
 ----
 
+RMSF
+----
+
+Computes the per-atom Root Mean Square Fluctuation, i.e. the time-averaged
+positional fluctuation of each atom about its mean position.  Supports
+multiple atom-group selections per run with a dedicated fitting group for
+in-memory structural alignment.  Alignment defaults to a two-pass scheme
+(align to the initial frame, build the average structure, then re-align to
+it) and can optionally target a single reference frame.  Per-selection RMSF
+values plus aggregate statistics are stored in the ``.pta`` file and plotted
+as RMSF profiles.
+
+CLI: ``pharmacon trajectory rmsf``
+
+----
+
 Distances
 ---------
 

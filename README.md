@@ -4,16 +4,23 @@
 
 # Pharmacon
 
-> **Pharmacon — A Molecular Dynamics Simulation Analysis Toolkit**, developed by Kyriakos Georgiou, 2026.
+### A Molecular Dynamics Simulation Analysis Toolkit
 
-> A unified command-line toolkit for analyzing molecular-dynamics trajectories and static structures, persisting results as signed, self-describing HDF5 artifacts, and producing publication-ready plots.
+A unified command-line toolkit for analyzing molecular-dynamics trajectories and
+static structures &mdash; persisting results as **signed, self-describing HDF5
+artifacts** and producing **publication-ready plots**.
 
+<sub>Developed by **Kyriakos Georgiou** &middot; 2026</sub>
+
+> [!IMPORTANT]
 > **If you use Pharmacon in your research, please cite:**
+>
 > Georgiou, K. *Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit.*
-> [Journal of Chemical Information and Modeling (2026)](https://www.todo) | DOI: `[TO BE UPDATED]`
+> [Journal of Chemical Information and Modeling (2026)](https://www.todo) &middot; DOI: `[TO BE UPDATED]`
 
 [![Python](https://img.shields.io/badge/python-%E2%89%A53.12-blue.svg?logo=python&logoColor=white)](https://www.python.org/)
-[![Status](https://img.shields.io/badge/status-alpha-orange.svg)]()
+[![Status](https://img.shields.io/badge/status-stable-brightgreen.svg)]()
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)]()
 [![License](https://img.shields.io/badge/license-GPLv3-blue.svg)](LICENSE.txt)
 [![Powered by MDAnalysis](https://img.shields.io/badge/powered%20by-MDAnalysis-orange.svg?logoWidth=16&logo=data:image/x-icon;base64,AAABAAEAEBAAAAEAIAAoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAA)](https://www.mdanalysis.org/)
 [![Powered by RDKit](https://img.shields.io/badge/powered%20by-RDKit-3838ff.svg?logo=data:image/x-icon;base64,AAABAAEAEBAAAAEAIAAoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAA)](https://www.rdkit.org/)
@@ -45,6 +52,7 @@
   - [`dump`](#dump--artifact-inspection)
 - [Analyzer Module](#analyzer-module)
   - [RMSD](#rmsd)
+  - [RMSF](#rmsf)
   - [Non-Covalent Interactions](#non-covalent-interactions-proteinligand--proteinprotein)
   - [Hydrogen Bonds](#hydrogen-bonds)
   - [Principal Component Analysis (PCA)](#principal-component-analysis-pca)
@@ -89,8 +97,6 @@ command-line workflow. As a proof-of-concept, we applied Pharmacon to analyze,
 in comparison with other toolkits, results from MD simulations such as
 intermolecular interactions and geometric measures across different test protein
 complexes, including three membrane proteins and one soluble protein complex.
-For comparison purposes you may find the Pharmacon publication
-<a href="https://www.nature.com/articles/s41597-023-00972-3">here</a>.
 </p>
 
 
@@ -229,6 +235,7 @@ a topology and trajectory file and writes results to a signed
 | Subcommand | Description |
 |---|---|
 | `rmsd` | Root Mean Square Deviation against a reference frame for one or more atom selections. |
+| `rmsf` | Per-atom Root Mean Square Fluctuation over a trajectory for one or more atom selections. |
 | `distances` | Pairwise or group-to-group distance time series. |
 | `angles` | Three-atom, vector, and dihedral angle time series. |
 | `h-bonds` | Hydrogen-bond detection across a trajectory. |
@@ -322,6 +329,19 @@ stored per-frame in the <code>.pta</code> file and can be plotted as
 time series.
 </p>
 
+### RMSF
+
+<p align="justify">
+Computes the per-atom Root Mean Square Fluctuation &mdash; the time-averaged
+positional fluctuation of each atom about its mean position. Supports multiple
+selections per run (e.g. backbone C-alpha, ligand heavy atoms) with a dedicated
+fitting group for in-memory alignment. Alignment defaults to a two-pass scheme
+(align to the initial frame, build the average structure, then re-align to it),
+or can target a single reference frame via <code>-r</code>. Per-selection RMSF
+values plus aggregate statistics are stored in the <code>.pta</code> file and
+can be plotted as RMSF profiles.
+</p>
+
 ### Non-Covalent Interactions (Protein–Ligand & Protein–Protein)
 
 <p align="justify">
@@ -340,7 +360,7 @@ per-frame basis across a trajectory:
 - **Pi–stacking interactions** — parallel or T-shaped aromatic ring pairs, classified by geometry.
 
 **Further information on distance cutoffs and interaction types can be found in
-the [Pharmacon paper](https://doi.org/10.1021/acs.jcim.0c00043).**
+the Pharmacon paper (see the [citation](#pharmacon) above; DOI pending).**
 
 
 <p align="justify">
@@ -374,8 +394,9 @@ surface (FES) heatmaps, and probability density heatmaps.
 
 <p align="justify">
 Computes pairwise or group-to-group distance time series between user-defined
-atom selections across a trajectory. Supports minimum-distance, center-of-mass,
-and center-of-geometry modes with periodic boundary condition (PBC) awareness.
+atom selections across a trajectory. Supports minimum-distance,
+maximum-distance, center-of-mass, and center-of-geometry modes with periodic
+boundary condition (PBC) awareness.
 </p>
 
 ### Angles
@@ -610,7 +631,7 @@ file.
 
 | Attribute | Type | Meaning |
 |---|---|---|
-| `pharmacon_version` | `str` | Version of Pharmacon that wrote the file (e.g. `"0.1.0"`). |
+| `pharmacon_version` | `str` | Version of Pharmacon that wrote the file (e.g. `"1.0.0"`). |
 | `schema_version` | `str` | Schema contract version for on-disk layout. |
 | `file_type` | `str` | `PharmaconHDF5Types.TRAJECTORY_ANALYSIS` or `…STRUCTURE_ANALYSIS`. |
 | `command` | `str` | High-level command label (e.g. `"Trajectory Analysis"`). |
@@ -685,6 +706,7 @@ Typical top-level group names (one per analysis):
 | Subcommand | Root group(s) | Per-frame dataset(s) |
 |---|---|---|
 | `rmsd` | `rmsd` | `frame_<N>/rmsd` |
+| `rmsf` | `rmsf` | per-selection RMSF arrays + statistics |
 | `angles` | `angles` | `frame_<N>/angles` |
 | `distances` | `distances` | `frame_<N>/distances` |
 | `h-bonds` | `hydrogen_bonds` | `frame_<N>/interactions` |
@@ -718,7 +740,7 @@ interaction type:
 | `HALOGEN-BOND` | `distance`, `angle_cxa`, `angle_xay`, `orientation` |
 | `METAL-CONTACT` | `distance`, `role`, `orientation` |
 | `WATER-BRIDGE-1` | 16 fields — one bridging water + two distances + two angle pairs + orientation |
-| `WATER-BRIDGE-2` | 28 fields — two bridging waters + three distances + three angle pairs + orientation |
+| `WATER-BRIDGE-2` | 28 fields — two bridging waters + three distances + three angle pairs + orientation *(reserved — not yet implemented)* |
 | `PI-CATION` | `distance`, `theta`, `orientation` |
 | `PI-STACKING` | `distance`, `angle`, `stacking_type`, `orientation` |
 
@@ -892,11 +914,12 @@ exact options.
 |---|---|
 | `-at, --add-transformations` | Apply PBC unwrapping transformations to the MDAnalysis Universe before analysis. |
 
-**Parallelization (for `pl-interactions`, `pp-interactions`, `h-bonds`, `pca`):**
+**Parallelization:**
 
-| Flag | Meaning |
-|---|---|
-| `--workers` | Number of parallel workers for frame processing (default: `1`). |
+| Flag | Meaning | Applies to |
+|---|---|---|
+| `--workers` | Number of parallel workers for frame processing (default: `1`). | `pl-interactions`, `pp-interactions`, `h-bonds` |
+| `--parallel` | Number of parallel workers for frame processing (default: `1`). | `pca` |
 
 **Interaction toggles (for `pl-interactions` / `pp-interactions`):**
 
@@ -956,7 +979,7 @@ pharmacon export psa --help                    # all PSA export options
 
 ```bash
 pharmacon trajectory rmsd \
-    -p protein.prmtop -t md.nc \
+    -p protein.prmtop -x md.nc \
     -sel "protein and name CA" "resname LIG and not name H*" \
     -n "bb_ca" "ligand_heavy" \
     -f "protein and name CA" \
@@ -972,8 +995,8 @@ pharmacon plot pta -i rmsd.pta -o plots/ --overwrite
 # Analyze each replicate separately
 for rep in rep1 rep2 rep3; do
   pharmacon trajectory pl-interactions \
-      -p $rep/topo.prmtop -t $rep/md.nc \
-      -lig "resname LIG" -rec "protein" \
+      -p $rep/topo.prmtop -x $rep/md.nc \
+      -lig "resname LIG" -prt "protein" \
       -o $rep/pli.pta
 done
 
@@ -990,8 +1013,8 @@ pharmacon plot pta -i pli_merged.pta -o plots/merged/ --overwrite \
 
 ```bash
 pharmacon trajectory pca \
-    -p protein.prmtop -t md.nc \
-    -s "protein and name CA" -n_components 5 \
+    -p protein.prmtop -x md.nc \
+    -sel "protein and name CA" -c 5 \
     -o pca.pta
 
 pharmacon plot pta -i pca.pta -o pca_plots/ --overwrite
@@ -1155,7 +1178,7 @@ Adding a new subcommand is a 4-step pattern:
 **Kyriakos Georgiou**<br>
 <br>
 Department of Pharmacy, University of Athens<br>
-Manuscript: https://arxiv.org/abs/2302.04242<br>
+Manuscript: *Journal of Chemical Information and Modeling* (2026) — DOI pending<br>
 GitHub: https://github.com/k-georgiou/pharmacon
 
 ## License

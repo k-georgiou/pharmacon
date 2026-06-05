@@ -22,14 +22,14 @@ artifacts, and producing publication-ready plots.
    * - **Python**
      - ≥ 3.12
    * - **Manuscript**
-     - `Nature Scientific Data (2023) <https://www.nature.com/articles/s41597-023-00972-3>`_
+     - *Journal of Chemical Information and Modeling* (2026) — DOI pending
 
 .. note::
 
    If you use Pharmacon in your research, please cite:
 
-   Georgiou, K. *Pharmacon: a unified command-line suite for molecular-dynamics
-   trajectory and structure analysis.* Nature Scientific Data (2023).
+   Georgiou, K. *Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit.*
+   Journal of Chemical Information and Modeling (2026).
    DOI: ``[TO BE UPDATED]``
 
 ----

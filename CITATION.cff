@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-title: "Pharmacon: A Molecular Dynamics Analysis Suite"
+title: "Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit"
 message: "If you use this software, please cite it using the metadata from this file."
 type: software
 authors:
@@ -39,5 +39,5 @@ preferred-citation:
       affiliation: "Department of Pharmacy, National and Kapodistrian University of Athens"
   journal: "Journal of Chemical Information and Modeling"
   year: 2026
-  doi: "TBD"              # TODO: update when published (e.g. 10.1038/s41597-023-00972-3)
+  doi: "TBD"              # TODO: update with the JCIM DOI when published
   url: "TBD"              # TODO: update when published

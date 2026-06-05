@@ -128,6 +128,97 @@ Full run with debug logging:
 
 ----
 
+rmsf
+----
+
+Calculate per-atom Root Mean Square Fluctuation (RMSF) over a trajectory.
+The trajectory is aligned in-memory on the fitting group, then ``rms.RMSF``
+is computed for each selection.  By default alignment is two-pass (align to
+the initial frame, build the average structure, then re-align to it); pass
+``-r`` to align to a single reference frame instead.
+
+**Arguments**
+
+.. list-table::
+   :header-rows: 1
+   :widths: 35 10 55
+
+   * - Flag
+     - Required
+     - Description
+   * - ``-p / --topology``
+     - Yes
+     - Input topology file
+   * - ``-x / --trajectory``
+     - Yes
+     - Input trajectory file
+   * - ``-sel / --selections``
+     - Yes
+     - One or more MDAnalysis selection strings for per-atom RMSF
+   * - ``-n / --names``
+     - Yes
+     - Label for each selection (must match count of ``-sel``)
+   * - ``-f / --fitting-group``
+     - Yes
+     - MDAnalysis selection used for in-memory alignment before RMSF
+   * - ``-o / --output``
+     - No
+     - Output ``.pta`` file (default: ``rmsf.pta``)
+   * - ``--overwrite``
+     - No
+     - Overwrite existing output file
+   * - ``-r / --reference-frame``
+     - No
+     - Frame index used as the alignment reference; omit to align to the
+       average structure (two-pass, recommended)
+   * - ``-b / --begin``
+     - No
+     - First frame to process (default: 0)
+   * - ``-e / --end``
+     - No
+     - Last frame to process (default: last)
+   * - ``-s / --step``
+     - No
+     - Process every Nth frame (default: 1)
+   * - ``-l / --log``
+     - No
+     - Log file (default: ``rmsf.log``)
+   * - ``-fl / --file-logging-level``
+     - No
+     - File log verbosity (default: ``DEBUG``)
+   * - ``-tl / --terminal-logging-level``
+     - No
+     - Terminal log verbosity (default: ``INFO``)
+
+**Examples**
+
+Per-atom RMSF of C-alpha atoms (two-pass alignment to the average structure):
+
+.. code-block:: bash
+
+   pharmacon trajectory rmsf \
+       -p topol.tpr \
+       -x traj.xtc \
+       -o rmsf.pta \
+       -sel "protein and name CA" \
+       -f  "protein and name CA" \
+       -n  calpha
+
+Multiple selections aligned to a single reference frame:
+
+.. code-block:: bash
+
+   pharmacon trajectory rmsf \
+       -p topol.tpr \
+       -x traj.xtc \
+       -o rmsf.pta \
+       -sel "protein and name CA" "backbone" \
+       -f  "protein and name CA" \
+       -n  calpha bb \
+       -r 0
+
+----
+
 distances
 ---------
 
@@ -725,7 +816,7 @@ probability density heatmaps via ``pharmacon plot pta``.
    * - ``--overwrite``
      - No
      - Overwrite existing output file
-   * - ``--workers``
+   * - ``--parallel``
      - No
      - Number of parallel worker processes (default: 1)
    * - ``-b / --begin``
