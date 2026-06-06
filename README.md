@@ -542,24 +542,22 @@ pass and produces the same results.
 
 ### Recommended: pre-image the trajectory yourself
 
-<p align="justify">
-The on-the-fly <code>unwrap → center → wrap</code> pipeline runs on
-<b>every</b> frame iteration, every time you launch an analysis. On long
-trajectories or workflows that touch the same trajectory repeatedly (RMSD,
-PCA, then PL-interactions, then H-bonds, …) this overhead is paid over and
-over again and can <b>heavily affect calculation speed</b> — sometimes
-dominating the total runtime.
-</p>
+> [!WARNING]
+> The on-the-fly `unwrap → center → wrap` pipeline runs on **every** frame
+> iteration, **every time** you launch an analysis. On long trajectories or
+> workflows that touch the same trajectory repeatedly (RMSD, PCA, then
+> PL-interactions, then H-bonds, …) this overhead is paid over and over again
+> and can **heavily affect calculation speed** — sometimes dominating the
+> total runtime.
 
-<p align="justify">
-For best performance we <b>strongly recommend pre-processing the trajectory
-once with your MD engine's native tooling</b> and then feeding the cleaned-up
-trajectory to Pharmacon <i>without</i> <code>-at</code>. Native tools are
-implemented in C/Fortran, operate frame-by-frame in a single streaming pass,
-and write the result to disk so the cost is paid exactly once.
-</p>
+> [!TIP]
+> For best performance, **pre-process the trajectory once with your MD engine's
+> native tooling**, then feed the cleaned-up trajectory to Pharmacon *without*
+> `-at`. Native tools are implemented in C/Fortran, operate frame-by-frame in a
+> single streaming pass, and write the result to disk — so the cost is paid
+> exactly once.
 
-Examples of native equivalents:
+**Examples of native equivalents:**
 
 - **GROMACS** — `gmx trjconv -pbc whole`, then `gmx trjconv -center -pbc mol -ur compact` (or `-pbc nojump` for unwrapped trajectories).
 - **Amber / cpptraj** — `autoimage` followed by `center` and `image familiar`.
@@ -568,13 +566,11 @@ Examples of native equivalents:
   `unwrap → center_in_box → wrap` chain and dumps the result with a
   `MDAnalysis.coordinates.XTC.XTCWriter`.
 
-<p align="justify">
-That said, if you're not sure how to do this with your engine of choice
-<b>it is perfectly fine to just pass <code>-at</code></b> and let Pharmacon
-handle it for you — the result is numerically identical, you just have to
-wait a bit longer for the analysis to finish. The flag exists exactly for
-this case.
-</p>
+> [!NOTE]
+> Not sure how to do this with your engine of choice? **It is perfectly fine to
+> just pass `-at`** and let Pharmacon handle it for you — the result is
+> numerically identical, you just have to wait a bit longer for the analysis to
+> finish. The flag exists exactly for this case.
 
 ### Subcommands that accept `-at`
 
