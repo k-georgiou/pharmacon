@@ -602,6 +602,17 @@ both partners plus interaction-specific geometric details.
      - No
      - Log file (default: ``pl_interactions.log``)
 
+.. caution::
+
+   **Always scope the water selection dynamically around the ligand.**
+   Prefer ``-w "resname WAT and around 5 resname LIG"`` over a global
+   ``-w "resname WAT"``.  A global selection forces Pharmacon to test
+   **every** water molecule in the box for bridging on **every** frame, which
+   can **dramatically increase runtime**.  Restricting waters to the
+   neighbourhood of the binding site yields identical results for the relevant
+   bridges at a fraction of the cost.  (Adjust ``WAT``/``LIG`` and the
+   ``around`` cutoff to match your system.)
+
 **Examples**
 
 Full interaction profile with water bridges:
@@ -614,7 +625,7 @@ Full interaction profile with water bridges:
        -o pl_interactions.pta \
        -prt "protein" \
        -lig "resname LIG" \
-       -w  "resname WAT"
+       -w  "resname WAT and around 5 resname LIG"
 
 Specific chain against the ligand, PBC-corrected:
 
@@ -687,6 +698,9 @@ over a trajectory.  Supports the same nine interaction types as
    * - ``--prt2``
      - Yes
      - MDAnalysis selection for the second protein / chain
+   * - ``-w / --water``
+     - No
+     - MDAnalysis selection for water molecules (required for water-bridge detection)
    * - ``-o / --output``
      - No
      - Output ``.pta`` file (default: ``pp_interactions.pta``)
@@ -735,6 +749,17 @@ over a trajectory.  Supports the same nine interaction types as
    * - ``-l / --log``
      - No
      - Log file (default: ``pp_interactions.log``)
+
+.. caution::
+
+   **Always scope the water selection dynamically around the interface.**
+   Prefer ``-w "resname WAT and around 5 chainid B"`` over a global
+   ``-w "resname WAT"``.  A global selection forces Pharmacon to test
+   **every** water molecule in the box for bridging on **every** frame, which
+   can **dramatically increase runtime**.  Restricting waters to the
+   neighbourhood of the protein–protein interface yields identical results for
+   the relevant bridges at a fraction of the cost.  (Adjust the resname and the
+   ``around`` cutoff to match your system.)
 
 **Examples**
 

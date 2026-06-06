@@ -888,6 +888,15 @@ exact options.
 | `-lig, --ligand` | MDAnalysis selection string for the ligand group. |
 | `-w, --water` | MDAnalysis selection string for water molecules (needed for water-bridge detection). |
 
+> [!CAUTION]
+> **Always scope the water selection dynamically around the binding site / interface.**
+> Prefer `-w "resname WAT and around 5 resname LIG"` over a global `-w "resname WAT"`.
+> A global selection forces Pharmacon to test **every** water molecule in the box for
+> bridging on **every** frame, which can **dramatically increase runtime**. Restricting
+> waters to the neighbourhood of the interaction site yields identical results for the
+> relevant bridges at a fraction of the cost. (Adjust `WAT`/`LIG` and the `around`
+> cutoff to match your system.)
+
 **Distance-specific selections (for `distances`):**
 
 | Flag | Meaning |
