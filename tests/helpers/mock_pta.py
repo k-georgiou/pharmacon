@@ -36,8 +36,10 @@ from pharmacon.utils.identifiers import create_mda_artifact_token
 
 __all__ = [
     "build_pli_pta",
+    "build_pli_frames_pta",
     "build_pli_merged_pta",
     "build_ppi_pta",
+    "build_ppi_frames_pta",
     "build_ppi_merged_pta",
     "build_pca_pta",
     "build_universal_pta",
@@ -45,8 +47,56 @@ __all__ = [
     "build_rmsf_merged_pta",
     "DEFAULT_PLI_ROWS",
     "DEFAULT_PPI_ROWS",
+    "DEFAULT_PLI_FRAME_SPECS",
+    "DEFAULT_PPI_FRAME_SPECS",
     "DEFAULT_RMSF_SELECTIONS",
 ]
+
+
+# Per-frame interaction-record specs. Each spec describes one
+# protein↔partner contact and the fraction of frames it is present in.
+# A record is the 20-field, frame_number-less row that
+# ``parse_frame_interaction_record`` consumes:
+#
+#   [label,
+#    a1_idx, a1_name, a1_id, a1_element, a1_type,   a1_resn, a1_resid, a1_chain, a1_seg,
+#    a2_idx, a2_name, a2_id, a2_element, a2_type,   a2_resn, a2_resid, a2_chain, a2_seg,
+#    details]
+#
+# atom1 is the protein (a1_type "BB"/"SC" drives the backbone/side-chain
+# split); atom2 is the ligand (PLI) or the partner protein (PPI), and its
+# name is what the ligand-atom monitor buckets on.
+#
+# Spec tuple:
+#   (label, a1_type, a1_resn, a1_resid, a1_chain, a1_seg,
+#    a2_name, a2_type, a2_resn, a2_resid, a2_chain, a2_seg, frequency)
+DEFAULT_PLI_FRAME_SPECS: tuple = (
+    ("HYDROPHOBIC",  "SC", "PHE", 45,  "A", "PROA", "C1", "SC", "LIG", 1, "A", "LIGA", 0.80),
+    ("HYDROPHOBIC",  "BB", "ILE", 175, "A", "PROA", "C2", "SC", "LIG", 1, "A", "LIGA", 0.50),
+    ("HYDROGEN-BOND", "SC", "ASP", 102, "A", "PROA", "N4", "SC", "LIG", 1, "A", "LIGA", 0.60),
+    ("HYDROGEN-BOND", "BB", "ASN", 184, "A", "PROA", "O2", "SC", "LIG", 1, "A", "LIGA", 0.40),
+    ("IONIC",        "SC", "ARG", 150, "A", "PROA", "N1", "SC", "LIG", 1, "A", "LIGA", 0.30),
+)
+
+DEFAULT_PPI_FRAME_SPECS: tuple = (
+    ("HYDROPHOBIC",  "SC", "PHE", 45,  "A", "PROA", "CA", "SC", "VAL", 200, "B", "PROB", 0.50),
+    ("HYDROGEN-BOND", "SC", "ASP", 102, "A", "PROA", "CA", "SC", "LYS", 215, "B", "PROB", 0.60),
+    ("IONIC",        "SC", "ARG", 150, "A", "PROA", "CA", "SC", "GLU", 220, "B", "PROB", 0.30),
+)
+
+
+def _spec_to_record(spec: Sequence) -> list:
+    """Turn a frame spec into a frame_number-less interaction record."""
+    (label, a1_type, a1_rn, a1_rid, a1_ch, a1_seg,
+     a2_name, a2_type, a2_rn, a2_rid, a2_ch, a2_seg, _freq) = spec
+    return [
+        str(label),
+        1, "CA", 1, "C", str(a1_type),
+        str(a1_rn), int(a1_rid), str(a1_ch), str(a1_seg),
+        2, str(a2_name), 2, "C", str(a2_type),
+        str(a2_rn), int(a2_rid), str(a2_ch), str(a2_seg),
+        {"distance": 3.5},
+    ]
 
 
 # A small, deterministic PLI dataset used by tests. Each tuple is
@@ -105,8 +155,15 @@ def _override_version(path: Path, version: str) -> None:
 def _write_interaction_pta(*, path: Path, group: str, subcommand: str,
                            rows: Sequence[Sequence], n_frames: int,
                            description: str,
+                           frame_specs: Sequence | None = None,
                            pharmacon_version: str | None = None) -> Path:
-    """Internal: build a PLI- or PPI-shaped PTA. Used by both builders."""
+    """Internal: build a PLI- or PPI-shaped PTA. Used by both builders.
+
+    When ``frame_specs`` is given, real per-frame ``frame_<N>/interactions``
+    records are written (one row per active spec per frame) so plots that
+    walk per-frame data (heatmaps, pie charts, ligand monitor, PPI timeline)
+    have something to render. Otherwise a single empty frame_0 is written.
+    """
 
     records: list[dict] = []
     for r in rows:
@@ -139,11 +196,25 @@ def _write_interaction_pta(*, path: Path, group: str, subcommand: str,
         pta.create_group(group)
         pta.add_group_metadata(group_name=group, metadata={"completed": "True"})
 
-        # Schema-stable empty frame_0/interactions so consumers that iterate
-        # frame_* under the group find at least one entry.
-        pta.write_frame_interactions(
-            frame_index=0, interactions=[], group_name=group, overwrite=True,
-        )
+        if frame_specs:
+            # Real per-frame records: each spec is present in the first
+            # round(frequency * n_frames) frames.
+            prepared = [
+                (_spec_to_record(s), int(round(float(s[-1]) * n_frames)))
+                for s in frame_specs
+            ]
+            for fidx in range(max(1, n_frames)):
+                active = [rec for rec, until in prepared if fidx < until]
+                pta.write_frame_interactions(
+                    frame_index=fidx, interactions=active,
+                    group_name=group, overwrite=True,
+                )
+        else:
+            # Schema-stable empty frame_0/interactions so consumers that iterate
+            # frame_* under the group find at least one entry.
+            pta.write_frame_interactions(
+                frame_index=0, interactions=[], group_name=group, overwrite=True,
+            )
 
         modes_root = f"{group}/modes"
         pta.create_group(modes_root)
@@ -242,6 +313,41 @@ def build_ppi_pta(path: Path, *, rows: Sequence = DEFAULT_PPI_ROWS,
         rows=rows, n_frames=n_frames,
         description="Protein-Protein Interaction Analysis (mock)",
         pharmacon_version=pharmacon_version,
+    )
+
+
+def build_pli_frames_pta(path: Path, *,
+                         frame_specs: Sequence = DEFAULT_PLI_FRAME_SPECS,
+                         rows: Sequence = DEFAULT_PLI_ROWS,
+                         n_frames: int = 100) -> Path:
+    """Build a PL-interactions PTA with real per-frame interaction records.
+
+    Suitable for the plots that walk frame_<N>/interactions: stacked-column-2
+    (backbone/side-chain), heatmaps 1 & 2, pie charts, and the ligand-atom
+    monitor. Also carries the modes tables, so stacked-column-1 still works.
+    """
+    return _write_interaction_pta(
+        path=path, group="pl_interactions", subcommand="pl-interactions",
+        rows=rows, n_frames=n_frames,
+        description="Protein-Ligand Interaction Analysis, per-frame (mock)",
+        frame_specs=frame_specs,
+    )
+
+
+def build_ppi_frames_pta(path: Path, *,
+                         frame_specs: Sequence = DEFAULT_PPI_FRAME_SPECS,
+                         rows: Sequence = DEFAULT_PPI_ROWS,
+                         n_frames: int = 100) -> Path:
+    """Build a PP-interactions PTA with real per-frame interaction records.
+
+    Needed by the PPI timeline-pairs plot, which builds a residue-pair ×
+    frame matrix from frame_<N>/interactions.
+    """
+    return _write_interaction_pta(
+        path=path, group="pp_interactions", subcommand="pp-interactions",
+        rows=rows, n_frames=n_frames,
+        description="Protein-Protein Interaction Analysis, per-frame (mock)",
+        frame_specs=frame_specs,
     )
 
 

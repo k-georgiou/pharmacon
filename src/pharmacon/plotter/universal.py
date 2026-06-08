@@ -711,7 +711,7 @@ def plot_pca_timeseries_from_file(pta_file,
     out_path = Path(out_dir) / f"{settings.fig_basename}.{settings.fig_format}"
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    fig.savefig(out_path, dpi=settings.fig_dpi)
+    fig.savefig(out_path, dpi=settings.fig_dpi, transparent=settings.fig_transparent)
     plt.close(fig)
     logger.info(f"Saved PCA timeseries → {out_path}")
 
@@ -799,7 +799,7 @@ def plot_pca_scatter_from_file(pta_file,
     out_path = Path(out_dir) / f"{settings.fig_basename}.{settings.fig_format}"
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    fig.savefig(out_path, dpi=settings.fig_dpi)
+    fig.savefig(out_path, dpi=settings.fig_dpi, transparent=settings.fig_transparent)
     plt.close(fig)
     logger.info(f"Saved PCA scatter → {out_path}")
 
@@ -888,7 +888,7 @@ def plot_pca_variance_ratio_from_file(pta_file,
     out_path = Path(out_dir) / f"{settings.fig_basename}.{settings.fig_format}"
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    fig.savefig(out_path, dpi=settings.fig_dpi)
+    fig.savefig(out_path, dpi=settings.fig_dpi, transparent=settings.fig_transparent)
     plt.close(fig)
     logger.info(f"Saved PCA variance-ratio plot → {out_path}")
 
