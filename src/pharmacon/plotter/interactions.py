@@ -72,6 +72,7 @@ __all__ = [
     "parse_frame_interaction_record",
     "build_pli_merged_stacked_data",
     "build_pli_normal_data",
+    "build_ppi_heatmap_matrix",
     "plot_protein_protein_timeline_pairs_from_file",
     "plot_protein_protein_heatmap_freq_from_file",
     "plot_protein_protein_interactions_stacked_column_from_file",
@@ -101,6 +102,13 @@ def parse_range_dict(obj) -> Dict[str, Tuple[int, int]]:
                         not align with the described format.
     """
 
+    # The INI loader (configobj, list_values=True) splits any comma-containing
+    # value into a list, so a natural dict literal like {'A': (1, 300)} arrives
+    # here as ["{'A': (1", "300)}"]. Re-join it so the unquoted form parses
+    # without the user needing to wrap the whole value in quotes.
+    if isinstance(obj, (list, tuple)):
+        obj = ", ".join(str(part) for part in obj)
+
     # If already dict (because literal_eval parsed it), use directly
     if isinstance(obj, dict):
         raw = obj
@@ -111,9 +119,12 @@ def parse_range_dict(obj) -> Dict[str, Tuple[int, int]]:
         try:
             raw = ast.literal_eval(obj)
         except Exception as e:
-            raise ValueError(f"Invalid range mapping syntax: {obj}") from e
+            raise ValueError(
+                f"Invalid range mapping syntax: {obj!r}. "
+                "Expected a dict of resid ranges, e.g. {'A': (1, 300)}."
+            ) from e
     else:
-        raise ValueError("Alter mapping must be dict or string.")
+        raise ValueError("Alter mapping must be a dict, list, or string.")
 
     if not isinstance(raw, dict):
         raise ValueError("Alter mapping must be a dict.")
@@ -1770,8 +1781,7 @@ def plot_protein_ligand_interactions_ligand_monitor_from_file(pta_file, *,
             residue_atom_frames[residue_key][atom2_name].add(frame)
 
     if not residue_atom_frames:
-        logger.warning("No interaction data collected.")
-        return
+        raise RuntimeError("No interaction data collected.")
 
     # Apply residue transformations
 
@@ -1849,8 +1859,7 @@ def plot_protein_ligand_interactions_ligand_monitor_from_file(pta_file, *,
         ligand_atoms = [c for c, keep in zip(ligand_atoms, col_mask) if keep]
 
     if matrix.size == 0:
-        logger.warning("Matrix empty after filtering; skipping plot.")
-        return
+        raise RuntimeError("Matrix empty after filtering.")
 
     # Figure
     fig, ax = plt.subplots(
@@ -2543,9 +2552,15 @@ def plot_protein_protein_timeline_pairs_from_file(pta_file, *,
         cbar.ax.tick_params(labelsize=settings.font_size_cbar)
 
     if not settings.disable_x_axis:
-        ax.set_xticks(np.arange(n_frames))
+        # Thin frame ticks so labels don't overlap on long trajectories.
+        max_ticks = getattr(settings, "xtick_max", 50) or 50
+        if n_frames <= max_ticks:
+            tick_pos = np.arange(n_frames)
+        else:
+            tick_pos = np.linspace(0, n_frames - 1, max_ticks, dtype=int)
+        ax.set_xticks(tick_pos)
         ax.set_xticklabels(
-            frame_indices,
+            [frame_indices[i] for i in tick_pos],
             rotation=settings.x_tick_rotation,
             fontsize=settings.font_size_x,
             fontweight=settings.font_weight_x,
@@ -2604,6 +2619,103 @@ def plot_protein_protein_timeline_pairs_from_file(pta_file, *,
     logger.info(f"Saved PPI timeline pairs to {out_path}")
 
 
+def build_ppi_heatmap_matrix(pta_file, *, group_name: str, mode_name: str,
+                             settings, is_merged: bool = False
+                             ) -> Tuple[List[str], np.ndarray]:
+    """
+    Build a residue×residue contact-frequency matrix for a PPI mode.
+
+    Each row of the modes table is keyed by ``[residue1, residue2,
+    interaction]``. Unlike :func:`build_pli_normal_data` — which keeps only
+    the first residue of every key and is therefore unsuitable here — this
+    builder uses BOTH residues, so the off-diagonal pair frequencies that a
+    contact map is supposed to show are actually populated.
+
+    Residue labels honour ``aa3_to_aa1``, ``renumber`` (additive offset, as
+    in the PPI timeline plot), ``alter_chains``/``alter_segments`` and
+    ``representation``. Frequencies are summed across interaction types and
+    filtered by ``threshold``.
+
+    :return: ``(residue_labels, matrix)`` where ``matrix`` is square with
+        ``matrix[i, j]`` the summed contact frequency between residue ``i``
+        and residue ``j`` (still un-symmetrised — the caller applies
+        ``symmetric``).
+    :rtype: Tuple[List[str], numpy.ndarray]
+    """
+    if is_merged:
+        dset_path = f"{group_name}/modes_merged/{mode_name}/table"
+        freq_field = "mean_frequency"
+    else:
+        dset_path = f"{group_name}/modes/{mode_name}/table"
+        freq_field = "frequency"
+
+    if dset_path not in pta_file.file:
+        raise RuntimeError(f"Dataset not found: {dset_path}")
+
+    dset = pta_file.file[dset_path]
+    if getattr(dset, "size", 0) == 0:
+        raise RuntimeError(f"Dataset empty: {dset_path}")
+
+    chain_map = parse_range_dict(settings.alter_chains_str) \
+        if settings.alter_chains and settings.alter_chains_str else {}
+    seg_map = parse_range_dict(settings.alter_segments_str) \
+        if settings.alter_segments and settings.alter_segments_str else {}
+
+    def build_label(res) -> Tuple[str, int]:
+        resname, resid, chainid, segid = res[0], int(res[1]), res[2], res[3]
+        if settings.aa3_to_aa1:
+            resname = AA3_to_AA1.get(str(resname).upper(), resname)
+        if settings.renumber and settings.renumber_int is not None:
+            resid = resid + settings.renumber_int
+        if settings.alter_chains:
+            for new_chain, (lo, hi) in chain_map.items():
+                if lo <= resid <= hi:
+                    chainid = new_chain
+                    break
+        if settings.alter_segments:
+            for new_seg, (lo, hi) in seg_map.items():
+                if lo <= resid <= hi:
+                    segid = new_seg
+                    break
+        label = settings.representation
+        label = label.replace("resname", str(resname))
+        label = label.replace("resid", str(resid))
+        label = label.replace("chainid", str(chainid))
+        label = label.replace("segid", str(segid))
+        return label, resid
+
+    pair_freq: Dict[Tuple[str, str], float] = {}
+    order: Dict[str, int] = {}
+
+    for row in dset:
+        rec = json.loads(row)
+        r1, r2, _interaction = rec["key"]
+        freq = float(rec[freq_field])
+        if freq < settings.threshold:
+            continue
+        l1, id1 = build_label(r1)
+        l2, id2 = build_label(r2)
+        order.setdefault(l1, id1)
+        order.setdefault(l2, id2)
+        pair_freq[(l1, l2)] = pair_freq.get((l1, l2), 0.0) + freq
+
+    if not pair_freq:
+        raise RuntimeError("No data collected.")
+
+    residue_labels = [lbl for lbl, _ in sorted(order.items(), key=lambda x: (x[1], x[0]))]
+    idx = {lbl: i for i, lbl in enumerate(residue_labels)}
+    n = len(residue_labels)
+    matrix = np.zeros((n, n))
+    for (li, lj), v in pair_freq.items():
+        matrix[idx[li], idx[lj]] += v
+
+    logger.debug(
+        "build_ppi_heatmap_matrix → %d residue(s), %d pair(s), matrix shape=%s",
+        n, len(pair_freq), matrix.shape,
+    )
+    return residue_labels, matrix
+
+
 def plot_protein_protein_heatmap_freq_from_file(pta_file,
                                                 *,
                                                 group_name: str,
@@ -2649,60 +2761,23 @@ def plot_protein_protein_heatmap_freq_from_file(pta_file,
     out_path = out_path.with_suffix(ext)
 
     # -------------------------------------------------
-    # BUILD DATA
+    # BUILD DATA — residue × residue pair-contact matrix
     # -------------------------------------------------
-    if is_merged:
-        ordered_residues, interactions, values, _ = \
-            build_pli_merged_stacked_data(
-                pta_file,
-                group_name=group_name,
-                mode_name=mode_name,
-                threshold=settings.threshold,
-                aa3_to_aa1=settings.aa3_to_aa1,
-                renumber=settings.renumber,
-                renumber_int=settings.renumber_int,
-                debug=False,
-            )
-    else:
-        ordered_residues, interactions, values = \
-            build_pli_normal_data(
-                pta_file,
-                group_name=group_name,
-                mode_name=mode_name,
-                threshold=settings.threshold,
-                aa3_to_aa1=settings.aa3_to_aa1,
-                renumber=settings.renumber,
-                renumber_int=settings.renumber_int,
-                debug=False,
-            )
+    # The modes table is keyed by [residue1, residue2, interaction], so both
+    # partners are used to populate the off-diagonal contact frequencies.
+    residue_labels, matrix = build_ppi_heatmap_matrix(
+        pta_file,
+        group_name=group_name,
+        mode_name=mode_name,
+        settings=settings,
+        is_merged=is_merged,
+    )
 
-    if values.size == 0:
+    if matrix.size == 0:
         logger.warning(f"No data available after processing. Skipping {mode_name}.")
         return
 
-    # -------------------------------------------------
-    # Convert stacked → symmetric contact matrix
-    # -------------------------------------------------
-    # ordered_residues = list of (resname, resid, chainid, segid)
-    residue_labels = []
-    for r in ordered_residues:
-        label = settings.representation
-        label = label.replace("resname", str(r[0]))
-        label = label.replace("resid", str(r[1]))
-        label = label.replace("chainid", str(r[2]))
-        label = label.replace("segid", str(r[3]))
-        residue_labels.append(label)
-
-    n = len(residue_labels)
-    matrix = np.zeros((n, n))
-
-    # values shape: (n_residues, n_interactions)
-    # collapse interactions → total frequency
-    totals = values.sum(axis=1)
-
-    for i in range(n):
-        matrix[i, i] = totals[i]
-
+    # Symmetrise so contacts read the same from either residue's row/column.
     if settings.symmetric:
         matrix = matrix + matrix.T - np.diag(matrix.diagonal())
 

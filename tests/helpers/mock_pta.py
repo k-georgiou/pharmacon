@@ -351,6 +351,21 @@ def build_ppi_frames_pta(path: Path, *,
     )
 
 
+def build_hbonds_frames_pta(path: Path, *,
+                            frame_specs: Sequence = DEFAULT_PPI_FRAME_SPECS,
+                            rows: Sequence = DEFAULT_PPI_ROWS,
+                            n_frames: int = 100) -> Path:
+    """Build an h-bonds PTA (group ``hbonds``) with per-frame interaction
+    records + modes, for the h-bond plots (heatmap, timeline, count, occupancy).
+    """
+    return _write_interaction_pta(
+        path=path, group="hbonds", subcommand="h-bonds",
+        rows=rows, n_frames=n_frames,
+        description="Hydrogen Bond Analysis, per-frame (mock)",
+        frame_specs=frame_specs,
+    )
+
+
 def _write_merged_interaction_pta(*, path: Path, group: str, subcommand: str,
                                   rows: Sequence[Sequence], n_files: int,
                                   description: str) -> Path:
@@ -480,8 +495,14 @@ def _finalize_metadata(pta: PharmaconPTAFile, *, blueprint: str) -> None:
 
 
 def build_pca_pta(path: Path, *, n_frames: int = 10, n_components: int = 4,
-                  variance_ratios: Sequence[float] | None = None) -> Path:
-    """Build a mock PCA PTA at `path`. Each frame stores n_components rows."""
+                  variance_ratios: Sequence[float] | None = None,
+                  group: str = "pca") -> Path:
+    """Build a mock PCA PTA at `path`. Each frame stores n_components rows.
+
+    ``group`` defaults to ``"pca"`` but the real analyzer writes one group per
+    selection named ``pca_<selection>`` (e.g. ``pca_protein``); pass that to
+    exercise the production group-naming convention.
+    """
 
     if variance_ratios is None:
         # geometric decay so the variance ratio array sums close to 1
@@ -506,11 +527,11 @@ def build_pca_pta(path: Path, *, n_frames: int = 10, n_components: int = 4,
             "reference_frame": "0",
         })
 
-        pta.create_group("pca")
-        pta.add_group_metadata(group_name="pca", metadata={"completed": "True"})
+        pta.create_group(group)
+        pta.add_group_metadata(group_name=group, metadata={"completed": "True"})
 
         for frame in range(n_frames):
-            frame_group = f"pca/frame_{frame}"
+            frame_group = f"{group}/frame_{frame}"
             pta.create_group(frame_group)
             # Reproducible-but-varied projections
             samples = rng.normal(size=n_components).tolist()
@@ -539,7 +560,8 @@ def build_pca_pta(path: Path, *, n_frames: int = 10, n_components: int = 4,
 def build_universal_pta(path: Path, *, group: str,
                         series: Mapping[str, Sequence[float] | Mapping[str, Sequence[float]]],
                         n_frames: int | None = None,
-                        time_ps_step: float = 10.0) -> Path:
+                        time_ps_step: float = 10.0,
+                        units: str | None = None) -> Path:
     """Build a mock universal-timeseries PTA (rmsd / angles / distances).
 
     `series` shape depends on `group`:
@@ -605,12 +627,16 @@ def build_universal_pta(path: Path, *, group: str,
                 dtype=h5py.string_dtype("utf-8"),
             ) if rows else np.empty((0,), dtype=h5py.string_dtype("utf-8"))
 
+            frame_metadata = {"frame_index": str(frame),
+                              "n_rows": str(len(data)),
+                              "time_ps": str(float(frame) * time_ps_step),
+                              "format": "json-per-row"}
+            if units is not None:
+                frame_metadata["units"] = str(units)
+
             pta.create_dataset(
                 group_name=frame_group, dataset_name=group, data=data,
-                metadata={"frame_index": str(frame),
-                          "n_rows": str(len(data)),
-                          "time_ps": str(float(frame) * time_ps_step),
-                          "format": "json-per-row"},
+                metadata=frame_metadata,
             )
 
         _finalize_metadata(pta, blueprint=blueprint)

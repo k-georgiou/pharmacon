@@ -31,6 +31,7 @@ __all__ = [
     "AVAILABLE_FONTS",
     "VALID_LINE_STYLES",
     "VALID_LEGEND_LOCS",
+    "VALID_INTERPOLATIONS",
     "PlotSettingsBase",
     "logger",
     # re-exported helpers the subclasses rely on
@@ -65,6 +66,12 @@ VALID_LINE_STYLES: Final[Set] = {"-", "--", "-.", ":", "solid", "dashed", "dashd
 VALID_LEGEND_LOCS: Final[Set] = {"best", "upper right", "upper left", "lower left", "lower right",
                                  "right", "center left", "center right", "lower center", "upper center",
                                  "center"}
+
+# Valid ``interpolation`` values accepted by ``matplotlib`` ``imshow``.
+VALID_INTERPOLATIONS: Final[Set] = {"none", "antialiased", "nearest", "bilinear", "bicubic",
+                                    "spline16", "spline36", "hanning", "hamming", "hermite",
+                                    "kaiser", "quadric", "catrom", "gaussian", "bessel",
+                                    "mitchell", "sinc", "lanczos", "blackman"}
 
 
 class PlotSettingsBase:
@@ -161,6 +168,25 @@ class PlotSettingsBase:
         pass
 
     # SAFE COERCION HELPERS
+    @staticmethod
+    def _is_unset(value: Any) -> bool:
+        """
+        Reports whether an override value is "unset" — i.e. ``None`` or an
+        empty/whitespace-only string.
+
+        An unset value means "use the default" and is treated identically to
+        omitting the key from the config. It must NOT raise a coercion warning:
+        the INI idiom ``vmax =`` (documented as "leave empty for auto") is the
+        absence of input, not invalid input. A genuine value such as ``abc``
+        is not unset and still warns.
+
+        :param value: The override value to test.
+        :type value: Any
+        :return: ``True`` if the value is unset, otherwise ``False``.
+        :rtype: bool
+        """
+        return value is None or (isinstance(value, str) and value.strip() == "")
+
     def _safe_int(self, value: Any, default: int,
                   min_val=None, max_val=None) -> int:
         """
@@ -183,6 +209,9 @@ class PlotSettingsBase:
             satisfied, or the `default` value otherwise.
         :rtype: int
         """
+        if self._is_unset(value):
+            return default
+
         try:
             value = int(value)
         except Exception:
@@ -218,6 +247,9 @@ class PlotSettingsBase:
             specified range; otherwise, the default value.
         :rtype: float
         """
+        if self._is_unset(value):
+            return default
+
         try:
             value = float(value)
         except Exception:
@@ -248,6 +280,9 @@ class PlotSettingsBase:
         :return: The resultant boolean value based on conversion or default.
         :rtype: bool
         """
+        if self._is_unset(value):
+            return default
+
         if isinstance(value, bool):
             return value
 
@@ -278,11 +313,105 @@ class PlotSettingsBase:
         :return: The validated color if valid, otherwise the default color.
         :rtype: str
         """
+        if self._is_unset(value):
+            return default
+
         value = str(value).strip()
         if is_color_like(value):
             return value
 
         self._warn(f"Invalid color '{value}', using default '{default}'")
+        return default
+
+    def _safe_cmap(self, value: Any, default: str = "viridis") -> str:
+        """
+        Ensures that the provided value is a registered matplotlib colormap name.
+        If it is not valid, the default colormap is returned and a warning issued.
+
+        :param value: The input value to validate as a colormap name.
+        :type value: Any
+        :param default: The default colormap name to use if the input is invalid.
+        :type default: str
+        :return: The validated colormap name if valid, otherwise the default.
+        :rtype: str
+        """
+        if self._is_unset(value):
+            return default
+
+        import matplotlib.pyplot as plt
+
+        value = str(value).strip()
+        if value in plt.colormaps():
+            return value
+
+        self._warn(f"Invalid cmap '{value}', using default '{default}'")
+        return default
+
+    def _safe_interpolation(self, value: Any, default: str = "nearest") -> str:
+        """
+        Ensures that the provided value is a valid matplotlib ``imshow``
+        interpolation. If it is not valid, the default is returned and a
+        warning issued.
+
+        :param value: The input value to validate as an interpolation name.
+        :type value: Any
+        :param default: The default interpolation to use if the input is invalid.
+        :type default: str
+        :return: The validated interpolation if valid, otherwise the default.
+        :rtype: str
+        """
+        if self._is_unset(value):
+            return default
+
+        value = str(value).strip().lower()
+        if value in VALID_INTERPOLATIONS:
+            return value
+
+        self._warn(f"Invalid interpolation '{value}', using default '{default}'")
+        return default
+
+    def _safe_font_weight(self, value: Any, default: str = "normal") -> str:
+        """
+        Ensures the value is a valid matplotlib font weight, coercing an
+        invalid one to the default with a warning. Unset → default silently.
+
+        :param value: The input value to validate as a font weight.
+        :type value: Any
+        :param default: The default font weight to use if the input is invalid.
+        :type default: str
+        :return: The validated font weight, otherwise the default.
+        :rtype: str
+        """
+        if self._is_unset(value):
+            return default
+
+        v = str(value).strip().lower()
+        if v in VALID_FONT_WEIGHTS:
+            return v
+
+        self._warn(f"Invalid font weight '{value}', using '{default}'")
+        return default
+
+    def _safe_font_family(self, value: Any, default: str = "dejavu sans") -> str:
+        """
+        Ensures the value is an installed font family, coercing an unknown one
+        to the default with a warning. Unset → default silently.
+
+        :param value: The input value to validate as a font family.
+        :type value: Any
+        :param default: The default font family to use if the input is unknown.
+        :type default: str
+        :return: The validated font family, otherwise the default.
+        :rtype: str
+        """
+        if self._is_unset(value):
+            return default
+
+        v = str(value).strip().lower()
+        if v in AVAILABLE_FONTS:
+            return v
+
+        self._warn(f"Font '{v}' not found, using '{default}'")
         return default
 
     # REGISTRY HELPERS

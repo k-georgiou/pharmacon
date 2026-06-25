@@ -43,6 +43,13 @@ _RMSD_GROUPS = frozenset({"rmsd"})
 _RMSF_GROUPS = frozenset({"rmsf"})
 _PCA_GROUPS = frozenset({"pca"})
 
+
+def _is_pca_group(group_name: str) -> bool:
+    """True for PCA groups. The analyzer writes one top-level group per
+    selection, named ``pca_<selection>`` (e.g. ``pca_protein``); the bare
+    ``pca`` name is also accepted for back-compat / single-group files."""
+    return group_name == "pca" or group_name.startswith("pca_")
+
 _INI_SUFFIXES = frozenset({".ini", ".inp", ".conf"})
 
 _EPILOG = """\
@@ -304,7 +311,12 @@ def run(args: argparse.Namespace) -> None:
                                            ProteinLigandInteractionsStackedColumn2PlotSettings,
                                            ProteinProteinInteractionsHeatmap,
                                            ProteinProteinInteractionsStackedColumnSettings,
-                                           ProteinProteinInteractionsTimelinePairs
+                                           ProteinProteinInteractionsTimelinePairs,
+                                           HBondsHeatmap,
+                                           HBondsTimelinePairs,
+                                           HBondsCountPerFrame,
+                                           HBondsOccupancy,
+                                           HBondsNetwork,
                                            )
     from pharmacon.fileio.pta import PharmaconPTAFile
     from pharmacon.logger import get_logger, header, setup_logger, subheader
@@ -319,6 +331,10 @@ def run(args: argparse.Namespace) -> None:
                                                 plot_protein_protein_interactions_stacked_column_from_file,
                                                 plot_protein_protein_timeline_pairs_from_file,
                                                 )
+    from pharmacon.plotter.hbonds import (plot_hbonds_count_per_frame_from_file,
+                                          plot_hbonds_occupancy_from_file,
+                                          plot_hbonds_network_from_file,
+                                          )
     from pharmacon.plotter.universal import (plot_pca_fes_from_file,
                                              plot_pca_probability_from_file,
                                              plot_pca_scatter_from_file,
@@ -484,7 +500,7 @@ def run(args: argparse.Namespace) -> None:
 
         # PCA
         for group_name in sorted(groups):
-            if group_name not in _PCA_GROUPS:
+            if not _is_pca_group(group_name):
                 continue
 
             subheader(f"Plotting: {group_name}")
@@ -651,6 +667,86 @@ def run(args: argparse.Namespace) -> None:
                         pta_file=pta,
                         group_name=group_name,
                         settings=timeline,
+                        out_dir=output_dir,
+                        is_merged=False,
+                    )
+
+        # Hydrogen bonds (residue↔residue, single interaction type)
+        for group_name in sorted(groups):
+            if group_name != "hbonds":
+                continue
+
+            subheader(f"Plotting: {group_name}")
+
+            mode_names = _discover_modes(pta, group_name, is_merged)
+
+            # Residue×residue frequency heatmap (reuses the PPI heatmap).
+            for mode_name in mode_names:
+                hb_heatmap = _settings_for(HBondsHeatmap)
+                if hb_heatmap is not None:
+                    _invoke(
+                        f"{group_name}/{mode_name}/heatmap",
+                        plot_protein_protein_heatmap_freq_from_file,
+                        pta_file=pta,
+                        group_name=group_name,
+                        mode_name=mode_name,
+                        settings=hb_heatmap,
+                        out_dir=output_dir,
+                        attach_to_name=mode_name,
+                        is_merged=is_merged,
+                    )
+
+            # Occupancy ranking — from mode2 (once-per-frame ⇒ true 0–1 occupancy).
+            occ_mode = "mode2" if "mode2" in mode_names else (mode_names[0] if mode_names else None)
+            if occ_mode is not None:
+                occupancy = _settings_for(HBondsOccupancy)
+                if occupancy is not None:
+                    _invoke(
+                        f"{group_name}/occupancy",
+                        plot_hbonds_occupancy_from_file,
+                        pta_file=pta,
+                        group_name=group_name,
+                        mode_name=occ_mode,
+                        settings=occupancy,
+                        out_dir=output_dir,
+                        is_merged=is_merged,
+                    )
+
+            # Residue H-bond network graph (reads its own mode, default mode2).
+            network = _settings_for(HBondsNetwork)
+            if network is not None:
+                _invoke(
+                    f"{group_name}/network",
+                    plot_hbonds_network_from_file,
+                    pta_file=pta,
+                    group_name=group_name,
+                    settings=network,
+                    out_dir=output_dir,
+                    is_merged=is_merged,
+                )
+
+            # Per-frame plots (non-merged only).
+            if not is_merged:
+                timeline = _settings_for(HBondsTimelinePairs)
+                if timeline is not None:
+                    _invoke(
+                        f"{group_name}/timeline_pairs",
+                        plot_protein_protein_timeline_pairs_from_file,
+                        pta_file=pta,
+                        group_name=group_name,
+                        settings=timeline,
+                        out_dir=output_dir,
+                        is_merged=False,
+                    )
+
+                count = _settings_for(HBondsCountPerFrame)
+                if count is not None:
+                    _invoke(
+                        f"{group_name}/count_per_frame",
+                        plot_hbonds_count_per_frame_from_file,
+                        pta_file=pta,
+                        group_name=group_name,
+                        settings=count,
                         out_dir=output_dir,
                         is_merged=False,
                     )

@@ -168,7 +168,8 @@ class PharmaconPTAFile(PharmaconHDF5File):
 
 
     def write_frame_interactions(self, *, frame_index: int, interactions: Iterable[Tuple],
-                                 group_name: str, overwrite: bool = False) -> None:
+                                 group_name: str, overwrite: bool = False,
+                                 time_ps: float | None = None) -> None:
         """
         Writes interaction data for a specific frame into a hierarchical data structure.
 
@@ -190,6 +191,10 @@ class PharmaconPTAFile(PharmaconHDF5File):
         :type group_name: str
         :param overwrite: Boolean flag specifying whether to overwrite existing frame data.
         :type overwrite: bool
+        :param time_ps: Optional simulation time of the frame in picoseconds. When
+            provided it is stored as the ``time_ps`` dataset attribute, enabling
+            time-based plot x-axes (time_ns / time_ps / time_us).
+        :type time_ps: float | None
         :return: None
         :rtype: NoneType
 
@@ -229,15 +234,19 @@ class PharmaconPTAFile(PharmaconHDF5File):
             )
 
         # --- write dataset + metadata ---
+        frame_metadata = {
+            "frame_index": str(frame_index),
+            "n_interactions": str(len(data)),
+            "format": "json-per-row",
+        }
+        if time_ps is not None:
+            frame_metadata["time_ps"] = str(float(time_ps))
+
         self.create_dataset(
             group_name=frame_group,
             dataset_name="interactions",
             data=data,
-            metadata={
-                "frame_index": str(frame_index),
-                "n_interactions": str(len(data)),
-                "format": "json-per-row",
-            },
+            metadata=frame_metadata,
         )
 
     def read_frame_interactions(self, *, frame_index: int, group_name: str) -> Tuple[Tuple, ...]:
@@ -617,6 +626,17 @@ class PharmaconPTAFile(PharmaconHDF5File):
             self.delete_group(modes_root)
         self.create_group(modes_root)
 
+        # Describe only the modes actually built (e.g. h-bonds skip mode3,
+        # which is hydrophobic-specific and identical to mode1 for them).
+        _mode_def_parts = []
+        if mode1:
+            _mode_def_parts.append("mode1=count all rows")
+        if mode2:
+            _mode_def_parts.append("mode2=deduplicate residue-key per frame")
+        if mode3:
+            _mode_def_parts.append("mode3=hydrophobic dedup per frame, others count all rows")
+        mode_definition = "; ".join(_mode_def_parts)
+
         def _write_mode(name: str, counts: dict, description: str) -> None:
             records = [
                 {
@@ -647,11 +667,7 @@ class PharmaconPTAFile(PharmaconHDF5File):
                     "end_inclusive": "True",
                     "normalization": "frequency = count / n_frames",
                     "format": "json-per-row",
-                    "mode_definition": (
-                        "mode1=count all rows; "
-                        "mode2=deduplicate residue-key per frame; "
-                        "mode3=hydrophobic dedup per frame, others count all rows"
-                    ),
+                    "mode_definition": mode_definition,
                 },
             )
 

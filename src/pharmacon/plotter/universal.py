@@ -172,6 +172,7 @@ def plot_pta_timeseries_from_file(pta_file,
                  x_axis, settings.plot_every_n, settings.plot_multiple)
 
     data: dict[str, dict[str, list]] = {}  # label -> {"x":[], "y":[], "std":[] or None}
+    units_attr = ""  # captured from the dataset 'units' attribute, if present
 
     frames = list(pta_file._iter_frames(group_name))
     if not frames:
@@ -192,6 +193,9 @@ def plot_pta_timeseries_from_file(pta_file,
         frames_used += 1
         dset = pta_file.file[dset_path]
         attrs = dset.attrs
+
+        if not units_attr:
+            units_attr = str(attrs.get("units", "")).strip()
 
         # new: compute x based on requested axis
         x_val = _get_x_value(attrs, frame, x_axis)
@@ -245,6 +249,12 @@ def plot_pta_timeseries_from_file(pta_file,
         rows_total, frames_used, len(data), sorted(data.keys()),
     )
 
+    # Units-aware y-label: only enhance when the user kept the default label,
+    # so an explicit y_label is always respected.
+    y_label = settings.y_label
+    if (not y_label or y_label == "Value") and units_attr:
+        y_label = f"Value ({units_attr})"
+
     def _plot(labels: list[str], suffix: str = "") -> None:
         fig, ax = plt.subplots(
             figsize=(settings.fig_size_width, settings.fig_size_height),
@@ -292,7 +302,7 @@ def plot_pta_timeseries_from_file(pta_file,
             )
 
         ax.set_xlabel(settings.x_label, fontsize=settings.font_size_label, fontweight=settings.font_weight_label)
-        ax.set_ylabel(settings.y_label, fontsize=settings.font_size_label, fontweight=settings.font_weight_label)
+        ax.set_ylabel(y_label, fontsize=settings.font_size_label, fontweight=settings.font_weight_label)
         ax.tick_params(labelsize=settings.font_size_ticks)
 
         if settings.enable_grid:

@@ -35,6 +35,8 @@ share/python-wheels/
 docs/build/
 docs/_build/
 docs/source/_autosummary/
+# regenerated from examples/plot_ini/README.md at build time
+docs/source/_generated/
 
 # ---- Virtual environments ----
 venv/

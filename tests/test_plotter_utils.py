@@ -25,6 +25,23 @@ class TestParseRangeDict:
         result = parse_range_dict("{'A': (1, 10)}")
         assert result == {"A": (1, 10)}
 
+    def test_configobj_split_list_rejoined(self):
+        # The INI loader (configobj, list_values=True) splits a comma-containing
+        # value such as "{'A': (1, 300)}" into ["{'A': (1", "300)}"]. The parser
+        # must re-join it so the natural, unquoted dict form works.
+        result = parse_range_dict(["{'A': (1", "300)}"])
+        assert result == {"A": (1, 300)}
+
+    def test_multikey_split_list_rejoined(self):
+        result = parse_range_dict(["{'A': (1", "100)", "'B': (101", "200)}"])
+        assert result == {"A": (1, 100), "B": (101, 200)}
+
+    def test_chain_name_list_raises_clear(self):
+        # The old (wrong) documented form "A,B,C" arrives as a list and is not
+        # a valid range dict; it must fail with the actionable syntax error.
+        with pytest.raises(ValueError, match="Invalid range mapping syntax"):
+            parse_range_dict(["A", "B", "C"])
+
     def test_empty_string_returns_empty_dict(self):
         assert parse_range_dict("") == {}
         assert parse_range_dict("   ") == {}
@@ -38,7 +55,7 @@ class TestParseRangeDict:
             parse_range_dict("not-a-dict")
 
     def test_non_dict_input_raises(self):
-        with pytest.raises(ValueError, match="must be dict or string"):
+        with pytest.raises(ValueError, match="must be a dict, list, or string"):
             parse_range_dict(42)
 
     def test_non_dict_after_eval_raises(self):

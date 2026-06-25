@@ -10,6 +10,8 @@ class is shaped for the per-selection / per-atom layout produced by the
 """
 from ._base import (
     PlotSettingsBase,
+    VALID_EXTENSIONS,
+    VALID_LINE_STYLES,
     Namespace,
     ClassVar,
     Tuple,
@@ -143,8 +145,37 @@ class RMSFPlotSettings(PlotSettingsBase):
         self.fig_size_width = self._safe_float(self.fig_size_width, 8, 2, 60)
         self.fig_size_height = self._safe_float(self.fig_size_height, 5, 2, 60)
 
+        ext = f".{str(self.fig_format).strip().lower()}"
+        if ext not in VALID_EXTENSIONS:
+            self._warn(f"Invalid fig_format '{self.fig_format}', using '.png'")
+            self.fig_format = "png"
+        else:
+            self.fig_format = ext.lstrip(".")
+
         self.fig_transparent = self._safe_bool(self.fig_transparent, False)
         self.tight_layout = self._safe_bool(self.tight_layout, True)
+        self.bg_color = self._safe_color(self.bg_color, "white")
+
+        # Fonts
+        self.font_family = self._safe_font_family(self.font_family, "dejavu sans")
+        self.font_size_title = self._safe_int(self.font_size_title, 14, 1)
+        self.font_size_label = self._safe_int(self.font_size_label, 10, 1)
+        self.font_size_ticks = self._safe_int(self.font_size_ticks, 8, 1)
+        self.font_size_legend = self._safe_int(self.font_size_legend, 8, 1)
+        self.font_weight_title = self._safe_font_weight(self.font_weight_title, "bold")
+        self.font_weight_label = self._safe_font_weight(self.font_weight_label, "normal")
+        self.font_weight_legend = self._safe_font_weight(self.font_weight_legend, "normal")
+
+        # Line / grid style
+        self.line_style = str(self.line_style).strip().lower()
+        if self.line_style not in VALID_LINE_STYLES:
+            self._warn(f"Invalid line_style '{self.line_style}', using 'solid'")
+            self.line_style = "solid"
+
+        self.grid_style = str(self.grid_style).strip().lower()
+        if self.grid_style not in VALID_LINE_STYLES:
+            self._warn(f"Invalid grid_style '{self.grid_style}', using 'dashed'")
+            self.grid_style = "dashed"
 
         self.line_width = self._safe_float(self.line_width, 1.5, 0.1, 10)
         self.line_alpha = self._safe_float(self.line_alpha, 1.0, 0.0, 1.0)
@@ -163,8 +194,10 @@ class RMSFPlotSettings(PlotSettingsBase):
         self.shading_show_legend = self._safe_bool(self.shading_show_legend, False)
 
         # Parse shading string into a list of dicts on the instance.
+        # The INI loader (configobj, list_values=True) splits any comma value
+        # into a list, so re-join it before parsing.
         self.shading_regions = self._parse_shading(
-            str(self.shading), self.shading_alpha,
+            self._listish_to_csv(self.shading), self.shading_alpha,
         )
 
         # x_axis: enum-like
@@ -255,14 +288,32 @@ class RMSFPlotSettings(PlotSettingsBase):
 
         self.line_colors = validated
 
-        # Per-label color overrides: "label:hex, label:hex"
-        self.colors_by_label_map = self._parse_colors_by_label(str(self.colors_by_label))
+        # Per-label color overrides: "label:hex, label:hex". Re-join the
+        # configobj comma-split list back into a string before parsing.
+        self.colors_by_label_map = self._parse_colors_by_label(
+            self._listish_to_csv(self.colors_by_label)
+        )
 
         # Axis limits: "auto" or numeric
         self.x_min = self._parse_axis_limit(self.x_min, "x_min")
         self.x_max = self._parse_axis_limit(self.x_max, "x_max")
         self.y_min = self._parse_axis_limit(self.y_min, "y_min")
         self.y_max = self._parse_axis_limit(self.y_max, "y_max")
+
+    @staticmethod
+    def _listish_to_csv(value) -> str:
+        """
+        Re-join a configobj comma-split list back into a comma-separated
+        string so multi-value fields (``shading``, ``colors_by_label``) parse
+        correctly. Non-list inputs are returned as a plain string.
+
+        Note: this only recovers the comma-splitting. A ``#`` hex colour left
+        unquoted in the INI is stripped as a configobj comment *before* it
+        reaches here — wrap the whole value in double quotes for hex colours.
+        """
+        if isinstance(value, (list, tuple)):
+            return ", ".join(str(part) for part in value)
+        return str(value)
 
     def _parse_axis_limit(self, value, field_name: str):
         """

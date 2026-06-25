@@ -40,6 +40,13 @@ from .pca import (
     PCAPlotFESHeatmapSettings,
     PCAPlotProbabilityHeatmapSettings,
 )
+from .hbonds import (
+    HBondsHeatmap,
+    HBondsTimelinePairs,
+    HBondsCountPerFrame,
+    HBondsOccupancy,
+    HBondsNetwork,
+)
 
 
 __all__ = [
@@ -66,4 +73,9 @@ __all__ = [
     "PCAPlotVarianceRatioSettings",
     "PCAPlotFESHeatmapSettings",
     "PCAPlotProbabilityHeatmapSettings",
+    "HBondsHeatmap",
+    "HBondsTimelinePairs",
+    "HBondsCountPerFrame",
+    "HBondsOccupancy",
+    "HBondsNetwork",
 ]

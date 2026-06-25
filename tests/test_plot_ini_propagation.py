@@ -126,9 +126,12 @@ def test_every_key_propagates(ini_file, section_name, cls, overrides):
             continue
         # Empty-string values in the INI are a documented "use the
         # default" sentinel — validate() restores the dataclass default
-        # for that field. We're testing propagation of EXPLICIT values,
-        # so skip the blanks.
-        if isinstance(raw_value, str) and raw_value == "":
+        # for that field. ``None`` is the same sentinel arriving via the
+        # INI parser's none/null/~ literal coercion (e.g. ``normalize =
+        # none``), which a validator may normalise back to a concrete
+        # default (e.g. the string "none"). We're testing propagation of
+        # EXPLICIT values, so skip both blank forms.
+        if raw_value is None or (isinstance(raw_value, str) and raw_value == ""):
             continue
         actual = getattr(instance, key)
         if not _equal_for_settings(actual, raw_value):

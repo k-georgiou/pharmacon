@@ -462,7 +462,7 @@ def _worker_process_frames(*,
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA synchronous=NORMAL")
 
-    for fidx in frame_indices:
+    for _n, fidx in enumerate(frame_indices, 1):
         ts = u.trajectory[fidx]
         frame_kwargs["box"] = ts.dimensions
         frame_contacts = interactions_process_frame(**frame_kwargs)
@@ -477,6 +477,7 @@ def _worker_process_frames(*,
             )
             conn.commit()
 
+        log.debug("Worker %d: frame %d/%d (idx %d)", worker_id, _n, len(frame_indices), fidx)
         log.trace("Worker %d processed frame #%d", worker_id, fidx)
 
     conn.close()
@@ -694,7 +695,7 @@ def run(args: argparse.Namespace) -> None:
                                             "workers": "1",
                                             })
             pta.create_group("hbonds")
-            for ts in u.trajectory[begin:end:step]:
+            for _n, ts in enumerate(u.trajectory[begin:end:step], 1):
                 frame_kwargs["box"] = ts.dimensions
                 frame_contacts = interactions_process_frame(**frame_kwargs)
                 flat = itertools.chain.from_iterable(frame_contacts)
@@ -702,7 +703,9 @@ def run(args: argparse.Namespace) -> None:
                 pta.write_frame_interactions(frame_index=ts.frame,
                                              group_name="hbonds",
                                              interactions=flat,
-                                             overwrite=True)
+                                             overwrite=True,
+                                             time_ps=float(ts.time))
+                log.debug("Frame %d/%d (idx %d)", _n, n_analysis_frames, ts.frame)
                 log.trace("Processed frame #%d", ts.frame)
 
             calc_end_time = time.time()
@@ -710,8 +713,11 @@ def run(args: argparse.Namespace) -> None:
             log.info("Calculations completed. Total time taken: %.2f seconds.", calc_time)
 
             log.info("Building interaction modes...")
+            # mode3 (hydrophobic dedup) is identical to mode1 for h-bonds —
+            # there are no hydrophobic contacts — so only build modes 1 and 2.
             pta.build_interaction_modes(group_name="hbonds",
-                                        begin=begin, end=end, step=step)
+                                        begin=begin, end=end, step=step,
+                                        mode3=False)
             log.debug("Interaction modes built successfully.")
             log.debug("Finalizing PTA file data")
 
@@ -840,6 +846,11 @@ def run(args: argparse.Namespace) -> None:
                                             })
             pta.create_group("hbonds")
 
+            # Simulation time (ps) per analysed frame — one sequential pass so
+            # the written frames carry a time_ps attribute for time-based axes.
+            frame_times = {ts.frame: float(ts.time)
+                           for ts in u.trajectory[begin:end:step]}
+
             for fidx in all_frames:
                 cursor = conn.execute(
                     "SELECT data FROM interactions WHERE frame_index = ? ORDER BY rowid",
@@ -849,14 +860,18 @@ def run(args: argparse.Namespace) -> None:
                 pta.write_frame_interactions(frame_index=fidx,
                                              group_name="hbonds",
                                              interactions=interactions,
-                                             overwrite=True)
+                                             overwrite=True,
+                                             time_ps=frame_times.get(fidx))
                 log.debug("Wrote frame %d (%d interactions)", fidx, len(interactions))
 
             conn.close()
 
             log.info("Building interaction modes...")
+            # mode3 (hydrophobic dedup) is identical to mode1 for h-bonds —
+            # there are no hydrophobic contacts — so only build modes 1 and 2.
             pta.build_interaction_modes(group_name="hbonds",
-                                        begin=begin, end=end, step=step)
+                                        begin=begin, end=end, step=step,
+                                        mode3=False)
             log.debug("Interaction modes built successfully.")
             log.debug("Finalizing PTA file data")
 

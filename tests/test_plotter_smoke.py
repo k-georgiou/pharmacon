@@ -37,6 +37,7 @@ from helpers.mock_pta import (  # noqa: E402
 from pharmacon.fileio.pta import PharmaconPTAFile  # noqa: E402
 from pharmacon.constants.plots import (  # noqa: E402
     ProteinLigandInteractionsStackedColumn1PlotSettings,
+    ProteinLigandInteractionsLigandMonitorSettings,
     ProteinProteinInteractionsHeatmap,
     PCAPlotScatterSettings,
     PlotUniversalSettings,
@@ -77,6 +78,37 @@ def test_render_pli_stacked_column_1(tmp_path):
             attach_to_name="mode1", is_merged=False,
         )
     _assert_nonempty_file_in(out_dir)
+
+
+def test_ligand_monitor_empty_matrix_raises(tmp_path):
+    # Regression: when all data is filtered out (threshold=1.0), the ligand
+    # monitor must raise RuntimeError so the orchestrator reports it as Skipped,
+    # rather than silently returning while being counted as "Rendered".
+    from pharmacon.plotter.interactions import (
+        plot_protein_ligand_interactions_ligand_monitor_from_file,
+    )
+    pta = build_pli_pta(tmp_path / "pli.pta", n_frames=100)
+    out_dir = tmp_path / "out_lm_empty"
+    out_dir.mkdir()
+
+    settings = ProteinLigandInteractionsLigandMonitorSettings.from_dict({
+        "fig_dpi": 80,
+        "fig_size_width": 4,
+        "fig_size_height": 3,
+        "fig_format": "png",
+        "threshold": 1.0,
+    })
+
+    with PharmaconPTAFile(pta, mode="r") as f:
+        with pytest.raises(RuntimeError,
+                           match="No interaction data collected|Matrix empty after filtering"):
+            plot_protein_ligand_interactions_ligand_monitor_from_file(
+                f, group_name="pl_interactions",
+                settings=settings, out_dir=out_dir,
+                is_merged=False,
+            )
+    # No file should have been written.
+    assert not any(p.is_file() for p in out_dir.iterdir())
 
 
 def test_render_ppi_heatmap(tmp_path):

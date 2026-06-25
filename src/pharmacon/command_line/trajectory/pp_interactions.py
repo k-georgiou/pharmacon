@@ -632,7 +632,7 @@ def run(args: argparse.Namespace) -> None:
                                             "workers": "1",
                                             })
             pta.create_group("pp_interactions")
-            for ts in u.trajectory[begin:end:step]:
+            for _n, ts in enumerate(u.trajectory[begin:end:step], 1):
                 frame_kwargs["box"] = ts.dimensions
                 frame_contacts = interactions_process_frame(**frame_kwargs)
                 flat = itertools.chain.from_iterable(frame_contacts)
@@ -641,6 +641,7 @@ def run(args: argparse.Namespace) -> None:
                                              group_name="pp_interactions",
                                              interactions=flat,
                                              overwrite=True)
+                log.debug("Frame %d/%d (idx %d)", _n, n_analysis_frames, ts.frame)
                 log.trace("Processed frame #%d", ts.frame)
 
             calc_end_time = time.time()

@@ -63,6 +63,11 @@ dev = [
     "pytest>=8.0",
     "MDAnalysisTests>=2.7",
 ]
+docs = [
+    "sphinx>=7.0",
+    "sphinx-rtd-theme>=2.0",
+    "myst-parser>=2.0",
+]
 
 [project.scripts]
 pharmacon = "pharmacon.main:main"

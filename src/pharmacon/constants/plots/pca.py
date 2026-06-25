@@ -197,6 +197,15 @@ class PCAPlotScatterSettings(PlotSettingsBase):
 
         self.bg_color = self._safe_color(self.bg_color, "white")
 
+        ext = f".{str(self.fig_format).strip().lower()}"
+        if ext not in VALID_EXTENSIONS:
+            self._warn(f"Invalid fig_format '{self.fig_format}', using '.png'")
+            self.fig_format = "png"
+        else:
+            self.fig_format = ext.lstrip(".")
+
+        self.cmap = self._safe_cmap(self.cmap, "viridis")
+
         self.scatter_size = self._safe_float(self.scatter_size, 20, 1, 1000)
         self.scatter_alpha = self._safe_float(self.scatter_alpha, 0.8, 0, 1)
 
@@ -264,6 +273,13 @@ class PCAPlotVarianceRatioSettings(PlotSettingsBase):
         self.fig_size_height = self._safe_float(self.fig_size_height, 6, 2, 40)
 
         self.bg_color = self._safe_color(self.bg_color, "white")
+
+        ext = f".{str(self.fig_format).strip().lower()}"
+        if ext not in VALID_EXTENSIONS:
+            self._warn(f"Invalid fig_format '{self.fig_format}', using '.png'")
+            self.fig_format = "png"
+        else:
+            self.fig_format = ext.lstrip(".")
 
         self.bar_alpha = self._safe_float(self.bar_alpha, 0.8, 0, 1)
         self.cumulative_line_width = self._safe_float(self.cumulative_line_width, 2.0, 0.1, 10)
@@ -341,6 +357,15 @@ class PCAPlotFESHeatmapSettings(PlotSettingsBase):
         self.fig_size_height = self._safe_float(self.fig_size_height, 6, 2, 40)
 
         self.bg_color = self._safe_color(self.bg_color, "white")
+
+        ext = f".{str(self.fig_format).strip().lower()}"
+        if ext not in VALID_EXTENSIONS:
+            self._warn(f"Invalid fig_format '{self.fig_format}', using '.png'")
+            self.fig_format = "png"
+        else:
+            self.fig_format = ext.lstrip(".")
+
+        self.cmap = self._safe_cmap(self.cmap, "plasma")
 
         # ---- bins / smoothing ----
         self.bins = self._safe_int(self.bins, 60, 10, 500)
@@ -433,6 +458,15 @@ class PCAPlotProbabilityHeatmapSettings(PlotSettingsBase):
         self.fig_size_height = self._safe_float(self.fig_size_height, 6, 2, 40)
 
         self.bg_color = self._safe_color(self.bg_color, "white")
+
+        ext = f".{str(self.fig_format).strip().lower()}"
+        if ext not in VALID_EXTENSIONS:
+            self._warn(f"Invalid fig_format '{self.fig_format}', using '.png'")
+            self.fig_format = "png"
+        else:
+            self.fig_format = ext.lstrip(".")
+
+        self.cmap = self._safe_cmap(self.cmap, "viridis")
 
         # ---- bins / smoothing ----
         self.bins = self._safe_int(self.bins, 60, 10, 500)

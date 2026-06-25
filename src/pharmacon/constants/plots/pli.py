@@ -874,7 +874,7 @@ class ProteinLigandInteractionsHeatmap1PlotSettings(PlotSettingsBase):
         # HEATMAP
         self.threshold = self._safe_float(self.threshold, 0.0, 0.0, 1.0)
 
-        self.cmap = str(self.cmap).strip() or "viridis"
+        self.cmap = self._safe_cmap(self.cmap, "viridis")
 
         if self.vmin is not None:
             self.vmin = self._safe_float(self.vmin, 0.0)
@@ -882,7 +882,7 @@ class ProteinLigandInteractionsHeatmap1PlotSettings(PlotSettingsBase):
         if self.vmax is not None:
             self.vmax = self._safe_float(self.vmax, None)
 
-        self.interpolation = str(self.interpolation).strip().lower() or "nearest"
+        self.interpolation = self._safe_interpolation(self.interpolation, "nearest")
 
         self.cbar_orientation = str(self.cbar_orientation).strip().lower()
         if self.cbar_orientation not in {"vertical", "horizontal"}:
@@ -1040,6 +1040,56 @@ class ProteinLigandInteractionsHeatmap2PlotSettings(PlotSettingsBase):
         # Font sizes
         self.font_size_x = self._safe_int(self.font_size_x, 10, 1)
         self.font_size_y = self._safe_int(self.font_size_y, 10, 1)
+
+        # Filtering / normalization
+        self.drop_empty_rows = self._safe_bool(self.drop_empty_rows, True)
+        self.threshold = self._safe_float(self.threshold, 0.02, 0.0, 1.0)
+
+        self.normalize = str(self.normalize).strip().lower() or "none"
+        if self.normalize not in {"none", "by_frame", "max1"}:
+            self._warn(f"Invalid normalize '{self.normalize}', using 'none'")
+            self.normalize = "none"
+
+        # Tick control
+        self.xtick_max = self._safe_int(self.xtick_max, 50, 0)
+        self.disable_x_axis = self._safe_bool(self.disable_x_axis, False)
+        self.disable_y_axis = self._safe_bool(self.disable_y_axis, False)
+        self.disable_x_label = self._safe_bool(self.disable_x_label, False)
+        self.disable_y_label = self._safe_bool(self.disable_y_label, False)
+        self.disable_title = self._safe_bool(self.disable_title, False)
+        self.disable_legend = self._safe_bool(self.disable_legend, False)
+        self.disable_ticks = self._safe_bool(self.disable_ticks, False)
+
+        # Axis limits (empty/unset → None = auto)
+        self.x_limit_min = self._safe_float(self.x_limit_min, None)
+        self.x_limit_max = self._safe_float(self.x_limit_max, None)
+
+        # Auto scaling
+        self.per_frame_in = self._safe_float(self.per_frame_in, 0.10, 0.0)
+        self.per_inter_in = self._safe_float(self.per_inter_in, 0.85, 0.0)
+        self.min_width = self._safe_float(self.min_width, 24.0, 0.0)
+        self.max_width = self._safe_float(self.max_width, 42.0, 0.0)
+        self.min_height = self._safe_float(self.min_height, 18.0, 0.0)
+        self.max_height = self._safe_float(self.max_height, 100.0, 0.0)
+
+        # Gridlines
+        self.enable_grid = self._safe_bool(self.enable_grid, False)
+        self.grid_color = self._safe_color(self.grid_color, "black")
+        self.grid_linewidth = self._safe_float(self.grid_linewidth, 0.2, 0.0, 10.0)
+
+        # Colormap (empty/unset → None = auto for vmin/vmax)
+        self.cmap = self._safe_cmap(self.cmap, "viridis")
+        self.vmin = self._safe_float(self.vmin, None)
+        self.vmax = self._safe_float(self.vmax, None)
+        self.interpolation = self._safe_interpolation(self.interpolation, "nearest")
+
+        # Colorbar
+        self.cbar_orientation = str(self.cbar_orientation).strip().lower() or "vertical"
+        if self.cbar_orientation not in {"vertical", "horizontal"}:
+            self._warn("Invalid cbar_orientation, using 'vertical'")
+            self.cbar_orientation = "vertical"
+        self.cbar_shrink = self._safe_float(self.cbar_shrink, 1.0, 0.1, 2.0)
+        self.cbar_pad = self._safe_float(self.cbar_pad, 0.04, 0.0, 1.0)
 
 
 
@@ -1341,10 +1391,10 @@ class ProteinLigandInteractionsLigandMonitorSettings(PlotSettingsBase):
             self.y_axis_representation = rep
 
         # Colormap
-        self.cmap = str(self.cmap).strip()
+        self.cmap = self._safe_cmap(self.cmap, "viridis")
         self.vmin = self._safe_float(self.vmin, 0.0)
         self.vmax = self._safe_float(self.vmax, 1.0)
-        self.interpolation = str(self.interpolation).strip().lower()
+        self.interpolation = self._safe_interpolation(self.interpolation, "nearest")
 
         # Grid
         self.enable_grid = self._safe_bool(self.enable_grid, False)
