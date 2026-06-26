@@ -1,0 +1,6 @@
+# Docs-only build dependencies (Read the Docs / local Sphinx build).
+# Kept slim on purpose: docs/source/conf.py does not import the pharmacon
+# package, so the heavy runtime deps (MDAnalysis, RDKit, …) are not needed.
+sphinx>=7,<10
+sphinx-rtd-theme>=2
+myst-parser>=2
