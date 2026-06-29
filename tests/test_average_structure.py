@@ -185,3 +185,134 @@ class TestExtractFrameValidation:
                 u, u.atoms, "all", 999,
                 output_file_path=out, output_format="pdb"
             )
+
+
+# ---------------------------------------------------------------------------
+# Rigid-body alignment correctness
+#
+# The static-frame tests above use identical frames, where the optimal
+# superposition rotation is the identity (R == R.T), so they cannot detect
+# whether the rotation matrix returned by MDAnalysis' ``rotation_matrix`` is
+# applied with the correct handedness. ``rotation_matrix(a, b)`` returns R with
+# ``b = R @ a`` (R acts on the left), so a row-stored coordinate set is aligned
+# with ``coords @ R.T`` — exactly what ``AtomGroup.rotate`` does internally.
+#
+# These tests feed pure rigid-body motion (rotation + translation of one base
+# structure). A correct superposition recovers the reference structure exactly,
+# so the averaged structure equals the base and every RMSD collapses to ~0.
+# They FAIL if the alignment uses ``@ R`` (the inverse rotation) instead of
+# ``@ R.T``.
+# ---------------------------------------------------------------------------
+
+
+def _axis_angle_matrix(axis, angle: float) -> np.ndarray:
+    """Proper rotation matrix (det = +1) from an axis and angle (Rodrigues)."""
+    axis = np.asarray(axis, dtype=float)
+    axis = axis / np.linalg.norm(axis)
+    x, y, z = axis
+    c = np.cos(angle)
+    s = np.sin(angle)
+    C = 1.0 - c
+    return np.array(
+        [
+            [c + x * x * C,     x * y * C - z * s, x * z * C + y * s],
+            [y * x * C + z * s, c + y * y * C,     y * z * C - x * s],
+            [z * x * C - y * s, z * y * C + x * s, c + z * z * C],
+        ],
+        dtype=float,
+    )
+
+
+# Asymmetric, non-collinear 5-atom rigid body so the optimal superposition
+# rotation is unique and well-conditioned.
+_RIGID_BASE = np.array(
+    [
+        [0.0, 0.0, 0.0],
+        [1.5, 0.0, 0.0],
+        [0.0, 2.0, 0.0],
+        [0.0, 0.0, 2.5],
+        [1.0, 1.0, 0.5],
+    ],
+    dtype=np.float32,
+)
+
+
+def _make_rigid_motion_universe():
+    """Universe whose frames are pure rigid-body transforms of one base.
+
+    Frame 0 is the untouched base (used as the reference frame); every other
+    frame is the base rotated by a known proper rotation and translated.
+    """
+    rng = np.random.default_rng(20260629)
+    frames = [_RIGID_BASE.copy()]  # frame 0 == reference == base
+    axes = [(1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 1, 0), (1, 2, 3)]
+    angles = [0.3, 1.1, -0.7, 2.0, -1.4]
+    for axis, angle in zip(axes, angles):
+        R = _axis_angle_matrix(axis, angle)
+        T = rng.uniform(-5.0, 5.0, size=3)
+        moved = (_RIGID_BASE.astype(float) @ R.T) + T
+        frames.append(moved.astype(np.float32))
+    return _make_traj_universe(frames)
+
+
+def _pairwise_distances(points: np.ndarray) -> np.ndarray:
+    """Coordinate-frame-independent fingerprint of a structure's geometry."""
+    diff = points[:, None, :] - points[None, :, :]
+    return np.sqrt((diff * diff).sum(axis=-1))
+
+
+class TestAvgStRigidBodyAlignment:
+    _STOP = 5  # 6 frames total (frame 0 + 5 moved)
+
+    def test_rotation_matrix_convention_is_left_acting(self):
+        # Lock down the assumption the fix relies on: rotation_matrix(a, b)
+        # returns R with b ≈ R @ a, so a @ R.T maps a onto b.
+        from MDAnalysis.analysis.align import rotation_matrix
+
+        R_true = _axis_angle_matrix((0.3, 1.0, -0.5), 0.9)
+        a = (_RIGID_BASE.astype(float) - _RIGID_BASE.astype(float).mean(axis=0))
+        b = a @ R_true.T  # b_i = R_true @ a_i
+        R, rmsd = rotation_matrix(a, b)
+        np.testing.assert_allclose(a @ R.T, b, atol=1e-6)
+        assert rmsd == pytest.approx(0.0, abs=1e-6)
+
+    def test_rmsd_to_ref_zero_for_rigid_motion(self):
+        u = _make_rigid_motion_universe()
+        _, _, rmsd_ref = avg_st_process_trajectory(u, u.atoms, start=0, stop=self._STOP)
+        np.testing.assert_allclose(rmsd_ref, 0.0, atol=1e-3)
+
+    def test_rmsd_to_avg_zero_for_rigid_motion(self):
+        u = _make_rigid_motion_universe()
+        _, rmsd_avg, _ = avg_st_process_trajectory(u, u.atoms, start=0, stop=self._STOP)
+        np.testing.assert_allclose(rmsd_avg, 0.0, atol=1e-3)
+
+    def test_avg_structure_matches_reference(self):
+        # Reference (frame 0) is the untouched base in absolute coordinates;
+        # aligning each rigid frame onto it recovers the base exactly, so the
+        # average equals the base.
+        u = _make_rigid_motion_universe()
+        avg_pos, _, _ = avg_st_process_trajectory(u, u.atoms, start=0, stop=self._STOP)
+        np.testing.assert_allclose(avg_pos, _RIGID_BASE, atol=1e-3)
+
+    def test_avg_structure_preserves_internal_geometry(self):
+        # A misaligned ("blurred") average would distort internal distances.
+        u = _make_rigid_motion_universe()
+        avg_pos, _, _ = avg_st_process_trajectory(u, u.atoms, start=0, stop=self._STOP)
+        np.testing.assert_allclose(
+            _pairwise_distances(avg_pos),
+            _pairwise_distances(_RIGID_BASE.astype(float)),
+            atol=1e-3,
+        )
+
+    def test_memory_efficient_and_full_agree_under_rotation(self):
+        u1 = _make_rigid_motion_universe()
+        u2 = _make_rigid_motion_universe()
+        avg1, ra1, rr1 = avg_st_process_trajectory(
+            u1, u1.atoms, start=0, stop=self._STOP, memory_efficient=True
+        )
+        avg2, ra2, rr2 = avg_st_process_trajectory(
+            u2, u2.atoms, start=0, stop=self._STOP, memory_efficient=False
+        )
+        np.testing.assert_allclose(avg1, avg2, atol=1e-4)
+        np.testing.assert_allclose(ra1, ra2, atol=1e-4)
+        np.testing.assert_allclose(rr1, rr2, atol=1e-4)

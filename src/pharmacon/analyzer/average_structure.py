@@ -113,7 +113,7 @@ def avg_st_process_trajectory(u: Universe, selection: AtomGroup,
                 mob_com = mob.mean(axis=0)
 
                 R, rmsd_val = rotation_matrix(mob - mob_com, ref - ref_com)
-                mob_aligned = (mob - mob_com) @ R + ref_com
+                mob_aligned = (mob - mob_com) @ R.T + ref_com
 
                 count += 1
                 delta = mob_aligned - mean
@@ -132,7 +132,7 @@ def avg_st_process_trajectory(u: Universe, selection: AtomGroup,
                 mob_com = mob.mean(axis=0)
 
                 R, _ = rotation_matrix(mob - mob_com, ref - ref_com)
-                mob_aligned = (mob - mob_com) @ R + ref_com
+                mob_aligned = (mob - mob_com) @ R.T + ref_com
 
                 diff = mob_aligned - avg_positions
                 rmsd = np.sqrt(np.mean(np.sum(diff * diff, axis=1)))
@@ -151,7 +151,7 @@ def avg_st_process_trajectory(u: Universe, selection: AtomGroup,
                 mob_com = mob.mean(axis=0)
 
                 R, rmsd_val = rotation_matrix(mob - mob_com, ref - ref_com)
-                mob_aligned = (mob - mob_com) @ R + ref_com
+                mob_aligned = (mob - mob_com) @ R.T + ref_com
 
                 aligned_positions_per_frame.append(mob_aligned)
                 rmsd_to_ref.append(float(rmsd_val))
