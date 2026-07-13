@@ -28,20 +28,20 @@ work that results in a publication (including but not limited to peer-reviewed
 articles, preprints, conference papers, posters, theses, technical reports,
 books, and public datasets), please cite the following reference:
 
-    Georgiou, K. Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit.
+    Georgiou, K.; Kolocouris, A. Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit.
     Journal of Chemical Information and Modeling, 2026.
-    DOI: [DOI PLACEHOLDER — TO BE UPDATED ON PUBLICATION]
-    URL: [URL PLACEHOLDER — TO BE UPDATED ON PUBLICATION]
+    DOI: 10.1021/acs.jcim.6c00837
+    URL: https://doi.org/10.1021/acs.jcim.6c00837
 
 BibTeX:
 
     @article{georgiou_pharmacon,
-      author  = {Georgiou, Kyriakos},
+      author  = {Georgiou, Kyriakos and Kolocouris, Antonios},
       title   = {Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit},
       journal = {Journal of Chemical Information and Modeling},
       year    = {2026},
-      doi     = {TBD},
-      url     = {TBD}
+      doi     = {10.1021/acs.jcim.6c00837},
+      url     = {https://doi.org/10.1021/acs.jcim.6c00837}
     }
 
 Citing Pharmacon supports its continued development and allows the author to

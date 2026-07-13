@@ -56,7 +56,7 @@ def __dir__():
 
 __version__: Final[str]     = "1.0.0"
 __author__: Final[str]      = "Kyriakos Georgiou"
-__manuscript__: Final[str]  = "https://arxiv.org/abs/2302.04242"
+__manuscript__: Final[str]  = "https://doi.org/10.1021/acs.jcim.6c00837"
 __github__: Final[str]      = "https://github.com/k-georgiou/pharmacon"
 
 # On-disk HDF5 layout version. Bump when the PTA/PSA schema changes in a way
