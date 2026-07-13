@@ -4,7 +4,9 @@ structure
 Analyze a single topology or structure file without requiring a trajectory.
 Results are written to a ``.psa`` (Pharmacon Structure Analysis) HDF5 artifact.
 
-**Supported formats:** ``.mol2``, ``.sdf``, ``.smi``, ``.pdb``, ``.gro``, ``.crd``
+**Supported formats:** ``.mol2``, ``.smi`` (``properties``); ``.pdb``, ``.gro``,
+``.crd`` (``sequence``).  ``.sdf`` is accepted by the parser but the reader is
+not yet implemented — use ``.mol2`` or ``.smi``.
 
 .. contents:: Subcommands
    :local:
@@ -42,7 +44,7 @@ Compute structural and chemical descriptors for small molecules using RDKit.
      - Description
    * - ``-i / --input``
      - Yes
-     - Input structure file (``.mol2``, ``.sdf``, ``.smi``)
+     - Input small-molecule file (``.mol2`` or ``.smi``; ``.sdf`` not yet supported)
    * - ``-o / --output``
      - No
      - Output ``.psa`` file (default: ``properties.psa``)
@@ -61,12 +63,12 @@ Compute structural and chemical descriptors for small molecules using RDKit.
 
 **Examples**
 
-Compute properties for a single SDF ligand:
+Compute properties for a single MOL2 ligand:
 
 .. code-block:: bash
 
    pharmacon structure properties \
-       -i ligand.sdf \
+       -i ligand.mol2 \
        -o ligand_props.psa
 
 Process a SMILES file with multiple molecules:
@@ -112,7 +114,7 @@ mappings.  Supports FASTA export via ``pharmacon export psa``.
      - Description
    * - ``-p / --topology``
      - Yes
-     - Input topology file (``.pdb``, ``.gro``, ``.crd``, …)
+     - Input topology file (``.pdb``, ``.gro``, ``.crd``)
    * - ``-o / --output``
      - No
      - Output ``.psa`` file (default: ``sequence.psa``)

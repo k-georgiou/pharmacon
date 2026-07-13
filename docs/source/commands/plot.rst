@@ -27,10 +27,14 @@ The type of figure produced depends on the analysis stored in the file:
      - Plots produced
    * - ``rmsd``, ``distances``, ``angles``
      - Time-series line plot (``PTA-UNIFIED``)
+   * - ``rmsf``
+     - Per-atom RMSF profile
    * - ``pl_interactions``
      - Stacked column (×2), heatmap (×2), pie charts, ligand monitor heatmap
    * - ``pp_interactions``
      - Timeline heatmap, residue heatmap, stacked column
+   * - ``hbonds``
+     - Residue×residue heatmap, occupancy ranking, H-bond network graph, timeline, count-per-frame
    * - ``pca``
      - Time series, scatter, variance-ratio scree, FES heatmap, probability heatmap
 
@@ -58,7 +62,7 @@ Plots that require per-frame data are automatically skipped on merged files
    * - ``--overwrite``
      - No
      - Overwrite existing output directory contents
-   * - ``-mw / --max-warnings``
+   * - ``-mw / --maxwarnings``
      - No
      - Maximum coercion warnings per plot before the plot is skipped (default: 0)
    * - ``-l / --log``

@@ -37,7 +37,7 @@ Pharmacon reads trajectories produced by **Amber**, **GROMACS**, **CHARMM**,
    * - Trajectory
      - ``.xtc``, ``.trr``, ``.dcd``, ``.nc``
    * - Structure (static)
-     - ``.pdb``, ``.gro``, ``.crd``, ``.mol2``, ``.sdf``, ``.smi``
+     - ``.pdb``, ``.gro``, ``.crd``, ``.mol2``, ``.smi`` (``.sdf`` planned, not yet supported)
 
 Common flags (all trajectory subcommands)
 ------------------------------------------

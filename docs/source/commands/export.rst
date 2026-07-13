@@ -38,18 +38,6 @@ output directory.
    * - ``--overwrite``
      - No
      - Overwrite existing output files
-   * - ``-mw / --max-warnings``
-     - No
-     - Maximum number of coercion warnings to tolerate
-   * - ``-l / --log``
-     - No
-     - Log file (default: ``export_pta.log``)
-   * - ``-fl / --file-logging-level``
-     - No
-     - File log verbosity (default: ``DEBUG``)
-   * - ``-tl / --terminal-logging-level``
-     - No
-     - Terminal log verbosity (default: ``INFO``)
 
 **Examples**
 
@@ -116,15 +104,6 @@ Export a Pharmacon Structure Analysis (``.psa``) file to CSV, TSV, or FASTA.
    * - ``--overwrite``
      - No
      - Overwrite existing output files
-   * - ``-l / --log``
-     - No
-     - Log file (default: ``export_psa.log``)
-   * - ``-fl / --file-logging-level``
-     - No
-     - File log verbosity (default: ``DEBUG``)
-   * - ``-tl / --terminal-logging-level``
-     - No
-     - Terminal log verbosity (default: ``INFO``)
 
 **Examples**
 

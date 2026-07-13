@@ -5,10 +5,12 @@ Combine multiple ``.pta`` files produced from the same topology into a single
 aggregated artifact.  The standard use case is pooling independent replicate
 runs before plotting or exporting.
 
-Before merging, Pharmacon verifies that all input files share the same
-**blueprint** (a deterministic hash of the run inputs — topology, selections,
-flags).  Files produced by different topologies or different subcommands are
-refused.
+Before merging, Pharmacon requires that all inputs share the same **command**
+and **subcommand** — this is a hard requirement and mismatched files are
+refused.  It also compares each file's **blueprint** (a deterministic hash of
+the run inputs — topology, selections, flags); a differing blueprint (e.g. a
+different topology) is reported as a warning and, under the default
+zero-warning budget (``-mw 0``), aborts the merge.
 
 Merged files replace per-frame datasets with aggregate summary tables stored
 under ``modes_merged/``.  The ``is_merged`` root attribute is set to ``True``.
@@ -33,7 +35,7 @@ Merge two or more ``.pta`` files into one aggregated artifact.
    * - Flag
      - Required
      - Description
-   * - ``-i / --inputs``
+   * - ``-i / --input``
      - Yes
      - Two or more input ``.pta`` files (space-separated)
    * - ``-o / --output``

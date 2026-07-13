@@ -50,16 +50,17 @@ The ``dev`` extra pulls in ``pytest``.  To run the full test suite:
 
    python -m pytest
 
-Optional: MPI support
----------------------
+Optional: MPI-aware logging
+---------------------------
 
-For MPI-parallel workloads install the optional extra:
+Pharmacon's parallel subcommands use Python ``multiprocessing`` and require no
+extra dependencies.  The optional ``mpi`` extra only installs ``mpi4py``,
+which Pharmacon uses — when present — to tag per-rank log files if you launch
+it under an MPI runner.  Install it only in that case:
 
 .. code-block:: bash
 
    pip install "pharmacon[mpi]"
-
-This adds ``mpi4py`` to the environment.
 
 Optional: development tools only (no editable install)
 -------------------------------------------------------

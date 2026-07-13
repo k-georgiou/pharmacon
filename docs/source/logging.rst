@@ -4,7 +4,8 @@ Logging & Workspaces
 Logging
 -------
 
-Every Pharmacon subcommand accepts three logging flags:
+Every Pharmacon subcommand except ``dump`` and ``export`` (which have no
+logging flags) accepts three logging flags:
 
 .. list-table::
    :header-rows: 1
@@ -112,9 +113,8 @@ The base directory is **created automatically** if it does not exist.
 **Automatic cleanup:**
 
 The temporary directory is deleted automatically via ``atexit`` when the
-Pharmacon process exits normally.  To retain it for debugging, set the
-``PHARMACON_DEBUG`` environment variable — the temp directory will not be
-cleaned up and its path will be visible in the log at ``INFO`` level.
+Pharmacon process exits — including on unhandled exceptions and
+``KeyboardInterrupt``.  Only a hard kill (``SIGKILL``) bypasses cleanup.
 
 .. code-block:: bash
 
@@ -142,4 +142,4 @@ Environment variable summary
        subdirectory is created inside it; auto-cleaned on exit
    * - ``PHARMACON_DEBUG``
      - unset
-     - Print full Python tracebacks on errors; suppresses temp dir cleanup
+     - Print full Python tracebacks on unexpected errors (same effect as the ``--debug`` flag)

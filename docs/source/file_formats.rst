@@ -158,7 +158,7 @@ more **analysis groups** at the root, containing per-frame datasets.
      - ``pp_interactions``
      - ``frame_<N>/interactions``
    * - ``pca``
-     - ``pca``
+     - ``pca_<selection>`` (one group per selection; bare ``pca`` accepted for back-compat)
      - ``components``, ``projections``, ``variance_ratio``
 
 .. _interaction-schema:
@@ -224,7 +224,7 @@ core schema:
    * - ``WATER-BRIDGE-1``
      - 16 fields: bridging water + two distances + two angle pairs + orientation
    * - ``WATER-BRIDGE-2``
-     - 28 fields: two bridging waters + three distances + three angle pairs + orientation
+     - 28 fields: two bridging waters + three distances + three angle pairs + orientation *(reserved — not yet implemented)*
    * - ``PI-CATION``
      - ``distance``, ``theta``, ``orientation``
    * - ``PI-STACKING``

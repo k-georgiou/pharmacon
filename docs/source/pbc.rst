@@ -32,8 +32,9 @@ PBC-aware distances handle the *measurement* side, but they cannot help when
 a molecule is visually broken across box faces (e.g. a protein straddling
 the box boundary), when downstream tools require whole molecules (RDKit
 SMARTS matching, RMSD fitting, average-structure export), or when the
-ligand drifts out of the protein's primary image. For these cases every
-trajectory subcommand that consumes coordinates accepts:
+ligand drifts out of the protein's primary image. For these cases most
+trajectory subcommands that consume coordinates (all except ``rmsd`` and
+``rmsf``) accept:
 
 .. code-block:: text
 
@@ -83,7 +84,7 @@ When to enable ``--add-transformations``
      - Enable
    * - Ligand drifts out of the primary box during a long run
      - Enable
-   * - RMSD / PCA / average-structure on a periodic system
+   * - PCA or average-structure on a periodic system
      - Enable
    * - Protein–ligand or protein–protein interactions with periodic ligands
      - Enable
@@ -137,7 +138,6 @@ Subcommands that accept ``-at``
 The flag is exposed on every trajectory subcommand whose output depends on
 coordinate geometry:
 
-- ``pharmacon trajectory rmsd``
 - ``pharmacon trajectory distances``
 - ``pharmacon trajectory angles``
 - ``pharmacon trajectory h-bonds``

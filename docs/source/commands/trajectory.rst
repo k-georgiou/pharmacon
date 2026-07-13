@@ -223,8 +223,8 @@ distances
 ---------
 
 Compute pairwise or group-to-group distance time series between user-defined
-atom selections.  Supports minimum-distance, centre-of-mass, and
-centre-of-geometry modes with PBC awareness.
+atom selections.  Supports minimum-distance, maximum-distance,
+centre-of-mass, and centre-of-geometry modes with PBC awareness.
 
 **Arguments**
 
@@ -274,6 +274,12 @@ centre-of-geometry modes with PBC awareness.
    * - ``-l / --log``
      - No
      - Log file (default: ``distances.log``)
+   * - ``-fl / --file-logging-level``
+     - No
+     - File log verbosity (default: ``DEBUG``)
+   * - ``-tl / --terminal-logging-level``
+     - No
+     - Terminal log verbosity (default: ``INFO``)
 
 All four lists (``-sel1``, ``-sel2``, ``-m``, ``-n``) must have the same
 number of entries.
@@ -380,9 +386,18 @@ All calculations are PBC-aware when box dimensions are available.
    * - ``-s / --step``
      - No
      - Frame stride (default: 1)
+   * - ``-at / --add-transformations``
+     - No
+     - Apply PBC wrap/unwrap transformations
    * - ``-l / --log``
      - No
      - Log file (default: ``angles.log``)
+   * - ``-fl / --file-logging-level``
+     - No
+     - File log verbosity (default: ``DEBUG``)
+   * - ``-tl / --terminal-logging-level``
+     - No
+     - Terminal log verbosity (default: ``INFO``)
 
 **Examples**
 
@@ -465,9 +480,18 @@ sole interest; for full interaction profiling see :ref:`pl-interactions`.
    * - ``-s / --step``
      - No
      - Frame stride (default: 1)
+   * - ``-at / --add-transformations``
+     - No
+     - Apply PBC wrap/unwrap transformations
    * - ``-l / --log``
      - No
      - Log file (default: ``hbonds.log``)
+   * - ``-fl / --file-logging-level``
+     - No
+     - File log verbosity (default: ``DEBUG``)
+   * - ``-tl / --terminal-logging-level``
+     - No
+     - Terminal log verbosity (default: ``INFO``)
 
 **Examples**
 
@@ -692,10 +716,10 @@ over a trajectory.  Supports the same nine interaction types as
    * - ``-x / --trajectory``
      - Yes
      - Input trajectory file
-   * - ``--prt1``
+   * - ``-prt1 / --protein1``
      - Yes
      - MDAnalysis selection for the first protein / chain
-   * - ``--prt2``
+   * - ``-prt2 / --protein2``
      - Yes
      - MDAnalysis selection for the second protein / chain
    * - ``-w / --water``
@@ -771,8 +795,8 @@ Interactions between chain A and chain B:
        -p topol.tpr \
        -x traj.xtc \
        -o pp_interactions.pta \
-       --prt1 "chainid A" \
-       --prt2 "chainid B"
+       -prt1 "chainid A" \
+       -prt2 "chainid B"
 
 Interface between two specific residue ranges:
 
@@ -782,8 +806,8 @@ Interface between two specific residue ranges:
        -p topol.tpr \
        -x traj.xtc \
        -o pp_interface.pta \
-       --prt1 "resid 1:50" \
-       --prt2 "resid 51:100"
+       -prt1 "resid 1:50" \
+       -prt2 "resid 51:100"
 
 Parallel run keeping only H-bond and ionic interactions:
 
@@ -793,8 +817,8 @@ Parallel run keeping only H-bond and ionic interactions:
        -p topol.tpr \
        -x traj.xtc \
        -o pp_hbond_ionic.pta \
-       --prt1 "chainid A" \
-       --prt2 "chainid B" \
+       -prt1 "chainid A" \
+       -prt2 "chainid B" \
        --disable-hydrophobic \
        --disable-pi-stacking \
        --disable-pi-cation \
@@ -853,9 +877,18 @@ probability density heatmaps via ``pharmacon plot pta``.
    * - ``-s / --step``
      - No
      - Frame stride (default: 1)
+   * - ``-at / --add-transformations``
+     - No
+     - Apply PBC wrap/unwrap transformations
    * - ``-l / --log``
      - No
      - Log file (default: ``pca.log``)
+   * - ``-fl / --file-logging-level``
+     - No
+     - File log verbosity (default: ``DEBUG``)
+   * - ``-tl / --terminal-logging-level``
+     - No
+     - Terminal log verbosity (default: ``INFO``)
 
 **Examples**
 
@@ -917,7 +950,7 @@ coordinate file for visualisation or further analysis.
      - MDAnalysis selection of atoms to average
    * - ``-o / --output``
      - No
-     - Output coordinate file (default: ``average.pdb``)
+     - Output coordinate file (default: ``average_st.pdb``)
    * - ``--overwrite``
      - No
      - Overwrite existing output file
@@ -933,9 +966,18 @@ coordinate file for visualisation or further analysis.
    * - ``-s / --step``
      - No
      - Frame stride (default: 1)
+   * - ``-at / --add-transformations``
+     - No
+     - Apply PBC wrap/unwrap transformations
    * - ``-l / --log``
      - No
      - Log file (default: ``average_st.log``)
+   * - ``-fl / --file-logging-level``
+     - No
+     - File log verbosity (default: ``DEBUG``)
+   * - ``-tl / --terminal-logging-level``
+     - No
+     - Terminal log verbosity (default: ``INFO``)
 
 **Examples**
 

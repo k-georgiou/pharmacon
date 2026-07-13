@@ -10,7 +10,7 @@ Pharmacon exposes six top-level commands, each grouping related subcommands.
    * - Command
      - Description
    * - :doc:`trajectory`
-     - Analyze MD trajectories: RMSD, distances, angles, hydrogen bonds, protein–ligand and protein–protein interactions, PCA, average structure
+     - Analyze MD trajectories: RMSD, RMSF, distances, angles, hydrogen bonds, protein–ligand and protein–protein interactions, PCA, average structure
    * - :doc:`structure`
      - Analyze static structures: molecular properties and amino-acid sequence extraction
    * - :doc:`dump`

@@ -15,8 +15,8 @@ artifacts** and producing **publication-ready plots**.
 > [!IMPORTANT]
 > **If you use Pharmacon in your research, please cite:**
 >
-> Georgiou, K. *Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit.*
-> [Journal of Chemical Information and Modeling (2026)](https://www.todo) &middot; DOI: `[TO BE UPDATED]`
+> Georgiou, K.; Kolocouris, A. *Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit.*
+> [Journal of Chemical Information and Modeling (2026)](https://doi.org/10.1021/acs.jcim.6c00837) &middot; DOI: `10.1021/acs.jcim.6c00837`
 
 [![Python](https://img.shields.io/badge/python-%E2%89%A53.12-blue.svg?logo=python&logoColor=white)](https://www.python.org/)
 [![Status](https://img.shields.io/badge/status-stable-brightgreen.svg)]()
@@ -374,7 +374,7 @@ per-frame basis across a trajectory:
 - **Pi–stacking interactions** — parallel or T-shaped aromatic ring pairs, classified by geometry.
 
 **Further information on distance cutoffs and interaction types can be found in
-the Pharmacon paper (see the [citation](#pharmacon) above; DOI pending).**
+the Pharmacon paper (see the [citation](#pharmacon) above; DOI: 10.1021/acs.jcim.6c00837).**
 
 
 <p align="justify">
@@ -496,8 +496,9 @@ PBC-aware distances handle the <i>measurement</i> side, but they cannot help
 when a molecule is visually broken across box faces (e.g. a protein straddling
 the box boundary), when downstream tools require whole molecules
 (RDKit SMARTS matching, RMSD fitting, average-structure export), or when the
-ligand drifts out of the protein's primary image. For these cases every
-trajectory subcommand that consumes coordinates accepts:
+ligand drifts out of the protein's primary image. For these cases most
+trajectory subcommands that consume coordinates (all except <code>rmsd</code>
+and <code>rmsf</code>) accept:
 </p>
 
 ```
@@ -544,7 +545,7 @@ hard requirement.
 | Trajectory already imaged / centered by the MD engine                | Leave **off** (default)                      |
 | Protein visibly split across box edges in the input trajectory       | Enable                                       |
 | Ligand drifts out of the primary box during a long run               | Enable                                       |
-| RMSD / PCA / average-structure on a periodic system                  | Enable                                       |
+| PCA or average-structure on a periodic system                        | Enable                                       |
 | Protein–ligand or protein–protein interactions with periodic ligands | Enable                                       |
 | Box dimensions are missing from the trajectory                       | Has no effect — pipeline is silently skipped |
 
@@ -589,11 +590,10 @@ pass and produces the same results.
 ### Subcommands that accept `-at`
 
 <p align="justify">
-The flag is exposed on every trajectory subcommand whose output depends on
-coordinate geometry:
+The flag is exposed on the trajectory subcommands that consume coordinates
+(all except <code>rmsd</code> and <code>rmsf</code>):
 </p>
 
-- `pharmacon trajectory rmsd`
 - `pharmacon trajectory distances`
 - `pharmacon trajectory angles`
 - `pharmacon trajectory h-bonds`
@@ -1135,7 +1135,7 @@ Sections not recognised by the invoked subcommand are silently ignored, so
 
 ## Logging & Workspaces
 
-Every subcommand accepts:
+Every subcommand except `dump` and `export` accepts:
 
 ```
 -l,  --log FILE
@@ -1197,8 +1197,14 @@ Adding a new subcommand is a 4-step pattern:
 **Kyriakos Georgiou**<br>
 <br>
 Department of Pharmacy, University of Athens<br>
-Manuscript: *Journal of Chemical Information and Modeling* (2026) — DOI pending<br>
+Manuscript: *Journal of Chemical Information and Modeling* (2026) — DOI: 10.1021/acs.jcim.6c00837<br>
 GitHub: https://github.com/k-georgiou/pharmacon
+
+## Acknowledgments
+
+Special thanks to **Antonios Kolocouris** (Department of Pharmacy, University
+of Athens) for his supervision, scientific guidance, and support throughout
+the project and the associated manuscript.
 
 ## License
 
