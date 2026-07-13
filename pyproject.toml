@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -13,13 +13,13 @@ authors = [
   { name = "Kyriakos Georgiou", email = "" }
 ]
 
-license = { text = "GPL-3.0-only" }
+license = "GPL-3.0-only"
+license-files = ["LICENSE.txt", "NOTICE"]
 
 keywords = ["molecular-dynamics", "simulation", "analysis", "chemistry", "hdf5", "mdanalysis"]
 classifiers = [
-  "Development Status :: 4 - Beta",
+  "Development Status :: 5 - Production/Stable",
   "Environment :: Console",
-  "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
@@ -50,10 +50,9 @@ dependencies = [
 ]
 
 [project.urls]
-# Public URLs will be enabled after manuscript acceptance
-# Homepage = "https://github.com/k-georgiou/pharmacon"
-# Repository = "https://github.com/k-georgiou/pharmacon"
-# Issues = "https://github.com/k-georgiou/pharmacon/issues"
+Homepage = "https://github.com/k-georgiou/pharmacon"
+Repository = "https://github.com/k-georgiou/pharmacon"
+Issues = "https://github.com/k-georgiou/pharmacon/issues"
 
 [project.optional-dependencies]
 mpi = [
