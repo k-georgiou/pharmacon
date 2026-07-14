@@ -47,6 +47,7 @@ pharmacon plot pta -i merged.pta -o ./plots -c examples/plot_ini/all_plots.ini
 | `pli_heatmap_2.ini`           | PLI             | `PLI-HEATMAP-2`           | Interaction × frame auto-sized heatmap                           |
 | `pli_pie_charts_1.ini`        | PLI             | `PLI-PIE-CHARTS-1`        | Per-residue pie charts + optional collage                        |
 | `pli_ligand_monitor.ini`      | PLI             | `PLI-LIGAND-MONITOR`      | Residue × ligand-atom contact heatmap                            |
+| `pl_interactions_all.ini`     | PLI (master)    | (every PLI alias)         | All six PLI plot types in one minimalistic file                  |
 | `ppi_timeline_pairs.ini`      | PPI             | `PPI-TIMELINE-PAIRS`      | Top residue-pair timeline heatmap                                |
 | `ppi_heatmap.ini`             | PPI             | `PPI-HEATMAP`             | Residue × residue contact frequency heatmap                      |
 | `ppi_stacked_column.ini`      | PPI             | `PPI-STACKED-COLUMN`      | Per-pair stacked column                                          |
@@ -437,11 +438,16 @@ color_halogen        = "#f49ac2"
 color_metal_contact  = "#95a5a6"
 ```
 
+> [!TIP]
+> Prefer one file for the whole family? **`pl_interactions_all.ini`** carries a
+> minimalistic section for all six PLI plots — copy it and tweak.
+
 > [!NOTE]
 > PLI plots are built from **interaction modes** (`mode1`/`mode2`/`mode3`):
 > mode1 counts every occurrence, mode2 de-duplicates per frame (occupancy),
-> mode3 is a hybrid. Stacked-column-1 renders once **per mode**; the other PLI
-> plots render once.
+> mode3 is a hybrid. Stacked-column-1 renders once **per mode** (merged and
+> non-merged); the other PLI plots render once and **only on non-merged files**
+> — a merged `.pta` produces just stacked-column-1.
 
 ### 7.1 Stacked column type 1 — `[PLI-STACKED-COLUMN-1]`
 Per-residue × interaction-type stacked bars.
@@ -688,8 +694,11 @@ stay integers (not `False`/`True`). Word literals (`true`, `false`, `yes`,
 | PTA-UNIFIED                 | Mean line + std band (`show_std_band=True`)       |
 | PTA-RMSF                    | Mean line + std band per atom                     |
 | PCA-*                       | **Skipped** (PCA is not mergeable)                |
-| PLI / PPI stacked columns   | Draw error bars (`error_bars=True`)               |
-| PLI / PPI / H-bond heatmaps | No special change                                 |
+| PLI stacked-column-1        | Renders per mode, with error bars                 |
+| PLI heatmaps / pie / monitor / stacked-column-2 | **Skipped** — non-merged only |
+| PPI stacked column          | Draws error bars (`error_bars=True`)              |
+| PPI / H-bond heatmaps       | Render (no special change)                        |
+| H-bond occupancy / network  | Render                                            |
 | H-bond timeline / count     | Per-frame plots — non-merged only                 |
 
 ### Where settings classes live
