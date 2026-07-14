@@ -12,7 +12,7 @@ repository-code: "https://github.com/k-georgiou/pharmacon"
 url: "https://github.com/k-georgiou/pharmacon"
 license: GPL-3.0-only
 version: 1.0.0
-date-released: "2026-04-13"
+date-released: "2026-07-14"
 keywords:
   - molecular-dynamics
   - simulation
