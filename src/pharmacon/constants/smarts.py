@@ -87,6 +87,7 @@ AA3_to_AA1: Final[Dict[str, str]] = {
     "THR": "T", "VAL": "V", "TRP": "W", "TYR": "Y",
     "HSD": "H", "HSE": "H", "HSP": "H", "HID": "H",
     "HIE": "H", "HIP": "H", "ASH": "D", "GLH": "E",
+    "CYX": "C", "CYM": "C", "MSE": "M",
 }
 
 NA_RES: Final[Tuple[str, ...]] = (
