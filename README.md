@@ -22,6 +22,7 @@ artifacts** and producing **publication-ready plots**.
 [![Status](https://img.shields.io/badge/status-stable-brightgreen.svg)]()
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)]()
 [![License](https://img.shields.io/badge/license-GPLv3-blue.svg)](LICENSE.txt)
+[![Docs](https://readthedocs.org/projects/pharmacon/badge/?version=latest)](https://pharmacon.readthedocs.io/en/latest/?badge=latest)
 [![Powered by MDAnalysis](https://img.shields.io/badge/powered%20by-MDAnalysis-orange.svg?logoWidth=16&logo=data:image/x-icon;base64,AAABAAEAEBAAAAEAIAAoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAA)](https://www.mdanalysis.org/)
 [![Powered by RDKit](https://img.shields.io/badge/powered%20by-RDKit-3838ff.svg?logo=data:image/x-icon;base64,AAABAAEAEBAAAAEAIAAoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAA)](https://www.rdkit.org/)
 [![HDF5](https://img.shields.io/badge/data-HDF5-1572B6.svg?logo=hdf5&logoColor=white)](https://www.hdfgroup.org/solutions/hdf5/)

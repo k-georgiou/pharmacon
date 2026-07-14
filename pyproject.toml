@@ -51,6 +51,7 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/k-georgiou/pharmacon"
+Documentation = "https://pharmacon.readthedocs.io/"
 Repository = "https://github.com/k-georgiou/pharmacon"
 Issues = "https://github.com/k-georgiou/pharmacon/issues"
 
