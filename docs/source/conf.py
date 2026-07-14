@@ -48,7 +48,7 @@ _GEN.mkdir(exist_ok=True)
 project = 'Pharmacon'
 copyright = '2026, Kyriakos Georgiou'
 author = 'Kyriakos Georgiou'
-release = '1.0.0'
+release = '1.0.1'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

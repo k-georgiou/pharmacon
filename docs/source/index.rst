@@ -16,7 +16,7 @@ artifacts, and producing publication-ready plots.
    * - **Affiliation**
      - Department of Pharmacy, University of Athens
    * - **Version**
-     - 1.0.0
+     - 1.0.1
    * - **License**
      - GPLv3-only (GNU General Public License v3.0 only)
    * - **Python**

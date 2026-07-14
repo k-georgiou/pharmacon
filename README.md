@@ -20,7 +20,7 @@ artifacts** and producing **publication-ready plots**.
 
 [![Python](https://img.shields.io/badge/python-%E2%89%A53.12-blue.svg?logo=python&logoColor=white)](https://www.python.org/)
 [![Status](https://img.shields.io/badge/status-stable-brightgreen.svg)]()
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)]()
+[![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)]()
 [![License](https://img.shields.io/badge/license-GPLv3-blue.svg)](LICENSE.txt)
 [![Docs](https://readthedocs.org/projects/pharmacon/badge/?version=latest)](https://pharmacon.readthedocs.io/en/latest/?badge=latest)
 [![Powered by MDAnalysis](https://img.shields.io/badge/powered%20by-MDAnalysis-orange.svg?logoWidth=16&logo=data:image/x-icon;base64,AAABAAEAEBAAAAEAIAAoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAA)](https://www.mdanalysis.org/)

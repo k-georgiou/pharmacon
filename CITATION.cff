@@ -10,7 +10,7 @@ authors:
 repository-code: "https://github.com/k-georgiou/pharmacon"
 url: "https://github.com/k-georgiou/pharmacon"
 license: GPL-3.0-only
-version: 1.0.0
+version: 1.0.1
 date-released: "2026-07-14"
 keywords:
   - molecular-dynamics

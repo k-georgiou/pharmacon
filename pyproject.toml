@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pharmacon"
-version = "1.0.0"
+version = "1.0.1"
 description = "Pharmacon: A Molecular Dynamics Analysis Suite."
 readme = "README.md"
 requires-python = ">=3.12"
