@@ -8,6 +8,28 @@ and a trajectory file and writes results to a signed ``.pta`` HDF5 artifact.
 
 **Supported trajectory formats:** ``.xtc``, ``.trr``, ``.dcd``, ``.nc``
 
+.. tip::
+
+   **Pre-image your trajectory with the MD engine instead of relying on**
+   ``-at``. Several subcommands accept ``-at / --add-transformations`` to
+   unwrap → center → wrap a periodic system on the fly, but that pipeline is
+   **lazy**: MDAnalysis re-evaluates it on *every* frame of *every* run, so the
+   cost is paid again on each analysis and can dominate the total runtime.
+
+   The strongly recommended workflow is to image the trajectory **once** with
+   your engine's native, C/Fortran tooling and feed that cleaned trajectory to
+   Pharmacon **without** ``-at`` — it is dramatically faster and numerically
+   identical:
+
+   - **GROMACS** — ``gmx trjconv -pbc whole`` then
+     ``gmx trjconv -center -pbc mol -ur compact``
+   - **Amber / cpptraj** — ``autoimage`` then ``center`` + ``image familiar``
+   - **CHARMM / NAMD (VMD)** — the ``pbctools`` plugin (``pbc unwrap`` /
+     ``pbc wrap``)
+
+   Reach for ``-at`` only as a convenience when you cannot pre-process. See
+   :doc:`/pbc` for the full rationale and engine-specific commands.
+
 .. contents:: Subcommands
    :local:
    :depth: 1
