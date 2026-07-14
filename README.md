@@ -1196,7 +1196,6 @@ Adding a new subcommand is a 4-step pattern:
 ## Author
 
 **Kyriakos Georgiou**<br>
-<br>
 Department of Pharmacy, University of Athens<br>
 Manuscript: *Journal of Chemical Information and Modeling* (2026) — DOI: 10.1021/acs.jcim.6c00837<br>
 GitHub: https://github.com/k-georgiou/pharmacon

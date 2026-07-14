@@ -5,7 +5,6 @@ type: software
 authors:
   - given-names: Kyriakos
     family-names: Georgiou
-    email: 
     affiliation: "Department of Pharmacy, National and Kapodistrian University of Athens"
     orcid: "https://orcid.org/0009-0003-5454-904X"
 repository-code: "https://github.com/k-georgiou/pharmacon"
@@ -35,7 +34,6 @@ preferred-citation:
   authors:
     - given-names: Kyriakos
       family-names: Georgiou
-      email: 
       affiliation: "Department of Pharmacy, National and Kapodistrian University of Athens"
     - given-names: Antonios
       family-names: Kolocouris

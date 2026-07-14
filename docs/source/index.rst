@@ -12,7 +12,7 @@ artifacts, and producing publication-ready plots.
    :stub-columns: 0
 
    * - **Author**
-     - Kyriakos Georgiou ()
+     - Kyriakos Georgiou
    * - **Affiliation**
      - Department of Pharmacy, University of Athens
    * - **Version**
