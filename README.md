@@ -1,5 +1,5 @@
 <p align="left">
-  <img src="resources/pharmacon_logo.png" alt="Pharmacon logo" width="600"/>
+  <img src="https://raw.githubusercontent.com/k-georgiou/pharmacon/main/resources/pharmacon_logo.png" alt="Pharmacon logo" width="600"/>
 </p>
 
 # Pharmacon
