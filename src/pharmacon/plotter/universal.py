@@ -308,6 +308,15 @@ def plot_pta_timeseries_from_file(pta_file,
         if settings.enable_grid:
             ax.grid(True, linestyle=settings.grid_style, alpha=settings.grid_alpha)
 
+        # Axis limits ("auto" leaves matplotlib's autoscaling untouched), applied
+        # one end at a time so a single bound can be set without fixing the other.
+        cur_xmin, cur_xmax = ax.get_xlim()
+        cur_ymin, cur_ymax = ax.get_ylim()
+        ax.set_xlim(settings.x_min if settings.x_min != "auto" else cur_xmin,
+                    settings.x_max if settings.x_max != "auto" else cur_xmax)
+        ax.set_ylim(settings.y_min if settings.y_min != "auto" else cur_ymin,
+                    settings.y_max if settings.y_max != "auto" else cur_ymax)
+
         if not settings.disable_legend:
             ax.legend(
                 fontsize=settings.font_size_legend,

@@ -91,6 +91,14 @@ class PlotUniversalSettings(PlotSettingsBase):
     show_std_band: bool = True
     std_band_alpha: float = 0.25
 
+    # ---------------- AXIS LIMITS ----------------
+    # "auto" leaves matplotlib's autoscaling; a number overrides that one end.
+    # Named as in rmsf.ini so one vocabulary covers both time-series plots.
+    x_min: str = "auto"
+    x_max: str = "auto"
+    y_min: str = "auto"
+    y_max: str = "auto"
+
     # ---------------- GRID ----------------
     enable_grid: bool = True
     grid_style: str = "dashed"
@@ -159,6 +167,12 @@ class PlotUniversalSettings(PlotSettingsBase):
             self._warn(f"Invalid line_style '{self.line_style}', using 'solid'")
             self.line_style = "solid"
 
+        # ---- axis limits ----
+        self.x_min = self._parse_axis_limit(self.x_min, "x_min")
+        self.x_max = self._parse_axis_limit(self.x_max, "x_max")
+        self.y_min = self._parse_axis_limit(self.y_min, "y_min")
+        self.y_max = self._parse_axis_limit(self.y_max, "y_max")
+
         # ---- grid ----
         self.enable_grid = self._safe_bool(self.enable_grid, True)
         self.grid_style = str(self.grid_style).strip().lower()
@@ -198,4 +212,24 @@ class PlotUniversalSettings(PlotSettingsBase):
     def namespace(self) -> Namespace:
         return Namespace(**asdict(self))
 
-
+    def _parse_axis_limit(self, value, field_name: str):
+        """
+        Accept "auto" (case-insensitive) or a numeric string/value. Returns
+        either the literal string "auto" or a float. Native int / float / bool
+        inputs are coerced numerically so an INI value of ``0`` (even if the
+        loader hands it through as False / True) still resolves correctly.
+        """
+        if value is None:
+            return "auto"
+        if isinstance(value, bool):
+            return float(value)
+        if isinstance(value, (int, float)):
+            return float(value)
+        text = str(value).strip().lower()
+        if text in {"", "auto", "none"}:
+            return "auto"
+        try:
+            return float(text)
+        except ValueError:
+            self._warn(f"Invalid {field_name} '{value}', using 'auto'.")
+            return "auto"
