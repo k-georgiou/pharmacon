@@ -15,6 +15,7 @@ summaries are added on top:
 from ._base import (
     PlotSettingsBase,
     VALID_EXTENSIONS,
+    VALID_LEGEND_LOCS,
     VALID_LINE_STYLES,
     Namespace,
     ClassVar,
@@ -158,6 +159,23 @@ class HBondsOccupancy(PlotSettingsBase):
     disable_y_axis: bool = False
     disable_ticks: bool = False
 
+    # ---------------- PRESENTATION ----------------
+    # Offered here so this plot accepts the same refinements as the rest of the toolkit.
+    # Every one defaults to the behaviour already in place, so no existing figure moves:
+    # an unset grid colour or per-axis font leaves exactly what the plot drew for itself.
+    legend_loc: str = "best"
+    legend_n_col: int = 1
+    grid_color: str | None = None
+    grid_linewidth: float | None = None
+    x_tick_rotation: float = 0.0
+    y_tick_rotation: float = 0.0
+    font_size_x: int | None = None
+    font_size_y: int | None = None
+    font_weight_x: str | None = None
+    font_weight_y: str | None = None
+    disable_x_label: bool = False
+    disable_y_label: bool = False
+
     def _validate_fields(self) -> None:
         self.fig_size_width = self._safe_float(self.fig_size_width, 8.0, 1.0, 200.0)
         self.fig_size_height = self._safe_float(self.fig_size_height, 10.0, 1.0, 200.0)
@@ -205,6 +223,31 @@ class HBondsOccupancy(PlotSettingsBase):
         self.disable_x_axis = self._safe_bool(self.disable_x_axis, False)
         self.disable_y_axis = self._safe_bool(self.disable_y_axis, False)
         self.disable_ticks = self._safe_bool(self.disable_ticks, False)
+
+        # ---- presentation ----
+        if str(self.legend_loc).strip().lower() not in VALID_LEGEND_LOCS:
+            self._warn(f"Invalid legend_loc '{self.legend_loc}', using 'best'")
+            self.legend_loc = "best"
+        else:
+            self.legend_loc = str(self.legend_loc).strip().lower()
+        self.legend_n_col = self._safe_int(self.legend_n_col, 1, 1, 10)
+        if not self._is_unset(self.grid_color):
+            self.grid_color = self._safe_color(self.grid_color, None)
+        if not self._is_unset(self.grid_linewidth):
+            self.grid_linewidth = self._safe_float(self.grid_linewidth, None, 0.1, 10)
+        self.x_tick_rotation = self._safe_float(self.x_tick_rotation, 0.0, -180, 180)
+        self.y_tick_rotation = self._safe_float(self.y_tick_rotation, 0.0, -180, 180)
+        # None means "follow the shared label setting", which is what happened before.
+        if not self._is_unset(self.font_size_x):
+            self.font_size_x = self._safe_int(self.font_size_x, 10, 1)
+        if not self._is_unset(self.font_size_y):
+            self.font_size_y = self._safe_int(self.font_size_y, 10, 1)
+        if not self._is_unset(self.font_weight_x):
+            self.font_weight_x = self._safe_font_weight(self.font_weight_x, "normal")
+        if not self._is_unset(self.font_weight_y):
+            self.font_weight_y = self._safe_font_weight(self.font_weight_y, "normal")
+        self.disable_x_label = self._safe_bool(self.disable_x_label, False)
+        self.disable_y_label = self._safe_bool(self.disable_y_label, False)
 
     def namespace(self) -> Namespace:
         return Namespace(**asdict(self))

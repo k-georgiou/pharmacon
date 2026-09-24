@@ -56,6 +56,91 @@ logger: PharmaconLogger = get_logger(__name__)
 
 
 
+
+def _apply_presentation(ax, settings) -> None:
+    """
+    Applies the shared presentation controls after a plot has drawn itself.
+
+    These controls were added to plots that already set their own labels, grid and
+    legend, so this refines what is there rather than replacing it. Every control is a
+    no-op at its default, which is why an existing figure is unchanged unless the user
+    asks for something: the grid is only recoloured if a colour was given, a label only
+    restyled if a per-axis font was set, the legend only moved if a location was chosen.
+
+    Reading the settings by name with a fallback keeps one helper usable across the
+    time-series, RMSF and PCA plots, which do not all declare the same field names.
+
+    :param ax: The axes to refine.
+    :param settings: The validated settings for this plot.
+    """
+    def get(name, fallback=None):
+        value = getattr(settings, name, None)
+        return fallback if value is None else value
+
+    # The existing gridlines are restyled in place rather than by calling ax.grid()
+    # again. Re-issuing the call would reinstate a full grid on a plot that had asked
+    # for one axis only (the occupancy bars use axis="x"), and would name a colour and
+    # width on every figure that had been letting matplotlib choose. Touching the line
+    # objects changes only what was asked for and leaves visibility exactly as drawn.
+    grid_color = getattr(settings, "grid_color", None)
+    grid_linewidth = getattr(settings, "grid_linewidth", None)
+    if grid_color is not None or grid_linewidth is not None:
+        for gridline in list(ax.get_xgridlines()) + list(ax.get_ygridlines()):
+            if grid_color is not None:
+                gridline.set_color(grid_color)
+            if grid_linewidth is not None:
+                gridline.set_linewidth(grid_linewidth)
+
+    # Only the properties the user named are passed, and only when at least one was.
+    # These plots do not all style their own labels the same way — some set a size, some
+    # leave matplotlib's — so re-setting a label with a "shared" font here would silently
+    # resize the labels of every figure that had been letting matplotlib decide.
+    for axis in ("x", "y"):
+        setter = ax.set_xlabel if axis == "x" else ax.set_ylabel
+        if get(f"disable_{axis}_label", False):
+            setter("")
+            continue
+        label_kwargs = {}
+        if getattr(settings, f"font_size_{axis}", None) is not None:
+            label_kwargs["fontsize"] = getattr(settings, f"font_size_{axis}")
+        if getattr(settings, f"font_weight_{axis}", None) is not None:
+            label_kwargs["fontweight"] = getattr(settings, f"font_weight_{axis}")
+        current = ax.get_xlabel() if axis == "x" else ax.get_ylabel()
+        if label_kwargs and current:
+            setter(current, **label_kwargs)
+
+    if get("x_tick_rotation", 0.0):
+        for label in ax.get_xticklabels():
+            label.set_rotation(settings.x_tick_rotation)
+    if get("y_tick_rotation", 0.0):
+        for label in ax.get_yticklabels():
+            label.set_rotation(settings.y_tick_rotation)
+
+    # Move the legend only when a position or a column count was actually chosen, so a
+    # plot that never drew one does not gain one here.
+    location = get("legend_loc", "best")
+    columns = int(get("legend_n_col", 1))
+    existing = ax.get_legend()
+    if existing is not None and (location != "best" or columns != 1):
+        handles, labels = ax.get_legend_handles_labels()
+        if handles:
+            drawn = ax.legend(handles, labels, loc=location, ncol=columns,
+                              fontsize=get("font_size_legend", 8),
+                              frameon=get("legend_frame", True))
+            frame = drawn.get_frame()
+            if frame is not None:
+                frame.set_alpha(get("legend_alpha", 1.0))
+
+    # font_weight_legend has been offered in the shipped configs for a while but no
+    # plot ever acted on it. Applying it here makes the documented key true. Its
+    # default, "normal", is matplotlib's own, so figures that never set it do not move.
+    legend_weight = getattr(settings, "font_weight_legend", None)
+    legend = ax.get_legend()
+    if legend_weight and legend is not None:
+        for text in legend.get_texts():
+            text.set_fontweight(legend_weight)
+
+
 def _unique_suffixes(labels) -> List[str]:
     """
     Turns labels into file-name suffixes that are distinct from one another.
@@ -416,6 +501,7 @@ def plot_pta_timeseries_from_file(pta_file,
                 framealpha=settings.legend_alpha,
             )
 
+        _apply_presentation(ax, settings)
         if settings.tight_layout:
             fig.tight_layout()
 
@@ -700,6 +786,7 @@ def plot_pta_rmsf_from_file(pta_file,
                 framealpha=settings.legend_alpha,
             )
 
+        _apply_presentation(ax, settings)
         if settings.tight_layout:
             fig.tight_layout()
 
@@ -814,6 +901,7 @@ def plot_pca_timeseries_from_file(pta_file,
     if not settings.disable_legend:
         ax.legend(fontsize=settings.font_size_legend)
 
+    _apply_presentation(ax, settings)
     if settings.tight_layout:
         fig.tight_layout()
 
@@ -902,6 +990,7 @@ def plot_pca_scatter_from_file(pta_file,
     if settings.enable_grid:
         ax.grid(True, linestyle=settings.grid_style, alpha=settings.grid_alpha)
 
+    _apply_presentation(ax, settings)
     if settings.tight_layout:
         fig.tight_layout()
 
@@ -991,6 +1080,7 @@ def plot_pca_variance_ratio_from_file(pta_file,
     if settings.enable_grid:
         ax.grid(True, linestyle=settings.grid_style, alpha=settings.grid_alpha)
 
+    _apply_presentation(ax, settings)
     if settings.tight_layout:
         fig.tight_layout()
 
@@ -1406,6 +1496,7 @@ def plot_pca_probability_from_file(pta_file,
 
         _draw(ax, surfaces[(pc_x, pc_y)], pc_x, pc_y)
 
+        _apply_presentation(ax, settings)
         if settings.tight_layout:
             fig.tight_layout()
 
@@ -1432,6 +1523,7 @@ def plot_pca_probability_from_file(pta_file,
 
         for i, (pc_x, pc_y) in enumerate(component_pairs):
             _draw(axes[i][0], surfaces[(pc_x, pc_y)], pc_x, pc_y)
+            _apply_presentation(axes[i][0], settings)
 
         if settings.tight_layout:
             fig.tight_layout()
@@ -1573,6 +1665,7 @@ def plot_pca_fes_from_file(pta_file,
 
         _draw(ax, surfaces[(pc_x, pc_y)], pc_x, pc_y)
 
+        _apply_presentation(ax, settings)
         if settings.tight_layout:
             fig.tight_layout()
 
@@ -1599,6 +1692,7 @@ def plot_pca_fes_from_file(pta_file,
 
         for i, (pc_x, pc_y) in enumerate(component_pairs):
             _draw(axes[i][0], surfaces[(pc_x, pc_y)], pc_x, pc_y)
+            _apply_presentation(axes[i][0], settings)
 
         if settings.tight_layout:
             fig.tight_layout()

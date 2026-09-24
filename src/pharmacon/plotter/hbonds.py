@@ -21,7 +21,7 @@ import numpy as np
 
 from pharmacon.logger import get_logger
 from pharmacon.constants.smarts import AA3_to_AA1
-from pharmacon.plotter.universal import _get_x_value
+from pharmacon.plotter.universal import _get_x_value, _apply_presentation
 
 
 __all__ = [
@@ -101,6 +101,8 @@ def plot_hbonds_count_per_frame_from_file(pta_file, *, group_name: str,
 
     if settings.enable_grid:
         ax.grid(True, linestyle=settings.grid_style, alpha=settings.grid_alpha)
+
+    _apply_presentation(ax, settings)
 
     if settings.tight_layout:
         fig.tight_layout()
@@ -196,6 +198,8 @@ def plot_hbonds_occupancy_from_file(pta_file, *, group_name: str, mode_name: str
 
     if settings.enable_grid:
         ax.grid(True, axis="x", linestyle=settings.grid_style, alpha=settings.grid_alpha)
+
+    _apply_presentation(ax, settings)
 
     if settings.tight_layout:
         fig.tight_layout()

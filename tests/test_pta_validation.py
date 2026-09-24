@@ -21,6 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from helpers.mock_pta import build_pli_pta
 
+from pharmacon.constants import __version__
 from pharmacon.utils.pta_validation import validate_pharmacon_file
 from pharmacon.command_line.exceptions import ValidationError
 
@@ -31,7 +32,7 @@ class TestHappyPaths:
         attrs = validate_pharmacon_file(path, expected_format="pta")
         assert attrs["command"] == "Trajectory Analysis"
         assert attrs["subcommand"] == "pl-interactions"
-        assert attrs["pharmacon_version"] == "1.0.0"
+        assert attrs["pharmacon_version"] == __version__
         assert attrs["is_merged"] == "False"
 
     def test_pta_old_version_allowed(self, tmp_path):
