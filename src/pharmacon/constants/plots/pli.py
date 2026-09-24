@@ -984,15 +984,6 @@ class ProteinLigandInteractionsHeatmap2PlotSettings(PlotSettingsBase):
     x_limit_min: float | None = None
     x_limit_max: float | None = None
 
-    # Auto scaling
-    per_frame_in: float = 0.10
-    per_inter_in: float = 0.85
-
-    min_width: float = 24.0
-    max_width: float = 42.0
-    min_height: float = 18.0
-    max_height: float = 100.0
-
     # Gridlines
     enable_grid: bool = False
     grid_color: str = "black"
@@ -1065,12 +1056,6 @@ class ProteinLigandInteractionsHeatmap2PlotSettings(PlotSettingsBase):
         self.x_limit_max = self._safe_float(self.x_limit_max, None)
 
         # Auto scaling
-        self.per_frame_in = self._safe_float(self.per_frame_in, 0.10, 0.0)
-        self.per_inter_in = self._safe_float(self.per_inter_in, 0.85, 0.0)
-        self.min_width = self._safe_float(self.min_width, 24.0, 0.0)
-        self.max_width = self._safe_float(self.max_width, 42.0, 0.0)
-        self.min_height = self._safe_float(self.min_height, 18.0, 0.0)
-        self.max_height = self._safe_float(self.max_height, 100.0, 0.0)
 
         # Gridlines
         self.enable_grid = self._safe_bool(self.enable_grid, False)

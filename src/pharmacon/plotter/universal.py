@@ -4,6 +4,7 @@ Pharmacon: A Molecular Dynamics Simulation Analysis Toolkit
 
 Module :mod:`pharmacon.plotter.universal`.
 """
+import ast
 import csv
 import json
 import math
@@ -51,6 +52,97 @@ plt.rcParams["pdf.fonttype"] = 42
 
 logger: PharmaconLogger = get_logger(__name__)
 
+
+
+
+
+def _unique_suffixes(labels) -> List[str]:
+    """
+    Turns labels into file-name suffixes that are distinct from one another.
+
+    Every character a file name cannot carry becomes an underscore, which means two
+    labels differing only in punctuation — "lig 1" and "lig_1", or "a:b" and "a_b" —
+    reduce to the same name. With ``plot_multiple`` each figure is written to its own
+    file, so the second silently overwrote the first and the run ended with fewer
+    figures than series and no complaint.
+
+    A collision is resolved by numbering the later ones. Truncation happens before the
+    number is appended, so the suffix cannot grow past the limit.
+
+    :param labels: The series labels, in the order they will be drawn.
+    :return: One suffix per label, in the same order, all distinct.
+    """
+    suffixes: List[str] = []
+    seen: Dict[str, int] = {}
+    for label in labels:
+        base = "".join(ch if ch.isalnum() or ch in ("-", "_", ".") else "_"
+                       for ch in str(label))[:120] or "series"
+        count = seen.get(base, 0)
+        seen[base] = count + 1
+        if count:
+            logger.warning(
+                "Two series reduce to the same file name %r; writing the later one as "
+                "%r so neither figure is lost.", base, f"{base}_{count + 1}")
+            base = f"{base}_{count + 1}"
+        suffixes.append(base)
+    return suffixes
+
+
+def _requested_order(pta_file, found) -> List[str]:
+    """
+    Puts the series back into the order the user asked for on the command line.
+
+    The order of ``-n`` carries meaning: it decides which selection gets which colour
+    and where each sits in the legend. Sorting the labels alphabetically silently
+    reassigns both, so a figure stops matching the analysis that produced it.
+
+    Three sources, in decreasing order of authority:
+
+    1. The ``names`` file attribute, which records the ``-n`` list verbatim. This is the
+       only source that survives storage as HDF5 subgroups, where the original order is
+       lost to alphabetical group ordering, and it works on artifacts written earlier.
+    2. The order the labels were read in. For a dataset of rows this is the order they
+       were written, which the replica merge also preserves.
+    3. Alphabetical, so a file carrying neither still plots.
+
+    Labels present in the file but absent from ``names`` are appended in the order they
+    were read rather than dropped: a series is never silently left out of a figure.
+
+    :param pta_file: The open artifact, read for its ``names`` attribute.
+    :param found: The labels actually present, in the order they were read.
+    :return: The same labels, reordered.
+    """
+    labels = list(found)
+    try:
+        raw = pta_file.file.attrs.get("names")
+    except Exception:                      # a closed or unusual file must not stop a plot
+        raw = None
+    if not raw:
+        return labels
+
+    try:
+        requested = ast.literal_eval(str(raw))
+    except (ValueError, SyntaxError):
+        logger.debug("Could not read the 'names' attribute (%r); keeping file order.", raw)
+        return labels
+    if not isinstance(requested, (list, tuple)):
+        return labels
+
+    # A label may be stored decorated, as "angle_label:kind" or "distance:method",
+    # so match on the part before the first colon as well as on the whole string.
+    remaining = list(labels)
+    ordered: List[str] = []
+    for name in requested:
+        name = str(name).strip()
+        for label in list(remaining):
+            if label == name or label.split(":", 1)[0] == name:
+                ordered.append(label)
+                remaining.remove(label)
+    ordered.extend(remaining)              # anything unnamed keeps its read order
+    if len(ordered) != len(labels):        # belt and braces: never lose a series
+        logger.debug("Order resolution changed the series count; keeping file order.")
+        return labels
+    return ordered
 
 
 def _get_x_value(attrs, frame: int, x_axis: str) -> float:
@@ -334,11 +426,10 @@ def plot_pta_timeseries_from_file(pta_file,
 
         logger.info(f"Saved PTA plot → {out_path}")
 
-    keys = sorted(data.keys())
+    keys = _requested_order(pta_file, data.keys())
 
     if settings.plot_multiple:
-        for k in keys:
-            safe = "".join(ch if ch.isalnum() or ch in ("-", "_", ".") else "_" for ch in k)[:120]
+        for k, safe in zip(keys, _unique_suffixes(keys)):
             _plot([k], suffix=f"_{safe}")
     else:
         _plot(keys, suffix="")
@@ -619,11 +710,10 @@ def plot_pta_rmsf_from_file(pta_file,
 
         logger.info(f"Saved RMSF plot → {out_path}")
 
-    keys = sorted(data.keys())
+    keys = _requested_order(pta_file, data.keys())
 
     if settings.plot_multiple:
-        for k in keys:
-            safe = "".join(ch if ch.isalnum() or ch in ("-", "_", ".") else "_" for ch in k)[:120]
+        for k, safe in zip(keys, _unique_suffixes(keys)):
             _plot([k], suffix=f"_{safe}")
     else:
         _plot(keys, suffix="")
