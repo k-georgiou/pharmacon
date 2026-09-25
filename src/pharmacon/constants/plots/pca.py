@@ -125,9 +125,11 @@ class PCAPlotTimeSeriesSettings(PlotSettingsBase):
 
         self.bg_color = self._safe_color(self.bg_color, "white")
 
+        # str() first: a non-string value here used to raise AttributeError out of
+        # validation, which discarded the settings object and lost the figure.
         self.font_family = (
-            self.font_family.lower()
-            if self.font_family.lower() in AVAILABLE_FONTS
+            str(self.font_family).strip().lower()
+            if str(self.font_family).strip().lower() in AVAILABLE_FONTS
             else "dejavu sans"
         )
 
@@ -148,10 +150,27 @@ class PCAPlotTimeSeriesSettings(PlotSettingsBase):
         self.legend_alpha = self._safe_float(self.legend_alpha, 1.0, 0, 1)
         self.grid_alpha = self._safe_float(self.grid_alpha, 0.3, 0, 1)
 
-        if self.grid_style not in VALID_LINE_STYLES:
+        # str() first: an unhashable value (a list, from "grid_style = 1,2") raised
+        # TypeError when tested against this set and cost the whole figure.
+        if str(self.grid_style).strip() not in VALID_LINE_STYLES:
             self.grid_style = "dashed"
 
-        self.pcs = [int(pc) for pc in self.pcs if int(pc) > 0]
+        # A single unquoted entry ("pcs = 1") arrives as a bare int, which is not
+        # iterable; a non-numeric entry raised ValueError. Both used to cost the figure.
+        requested = self._safe_sequence(self.pcs, [1, 2, 3], "pcs")
+        kept = []
+        for pc in requested:
+            try:
+                number = int(pc)
+            except (TypeError, ValueError):
+                self._warn(f"Invalid pcs entry '{pc}', ignoring it")
+                continue
+            if number > 0:
+                kept.append(number)
+        if not kept:
+            self._warn("pcs empty, restoring defaults")
+            kept = [1, 2, 3]
+        self.pcs = kept
 
         # ---- presentation ----
         if str(self.legend_loc).strip().lower() not in VALID_LEGEND_LOCS:
@@ -270,10 +289,13 @@ class PCAPlotScatterSettings(PlotSettingsBase):
         self.scatter_size = self._safe_float(self.scatter_size, 20, 1, 1000)
         self.scatter_alpha = self._safe_float(self.scatter_alpha, 0.8, 0, 1)
 
-        self.pc_x = max(1, int(self.pc_x))
-        self.pc_y = max(1, int(self.pc_y))
+        # int() on a non-numeric value raised out of validation and cost the figure.
+        self.pc_x = self._safe_int(self.pc_x, 1, 1)
+        self.pc_y = self._safe_int(self.pc_y, 2, 1)
 
-        if self.grid_style not in VALID_LINE_STYLES:
+        # str() first: an unhashable value (a list, from "grid_style = 1,2") raised
+        # TypeError when tested against this set and cost the whole figure.
+        if str(self.grid_style).strip() not in VALID_LINE_STYLES:
             self.grid_style = "dashed"
 
         self.grid_alpha = self._safe_float(self.grid_alpha, 0.3, 0, 1)
@@ -390,7 +412,9 @@ class PCAPlotVarianceRatioSettings(PlotSettingsBase):
         self.cumulative_line_width = self._safe_float(self.cumulative_line_width, 2.0, 0.1, 10)
         self.cumulative_alpha = self._safe_float(self.cumulative_alpha, 0.9, 0, 1)
 
-        if self.grid_style not in VALID_LINE_STYLES:
+        # str() first: an unhashable value (a list, from "grid_style = 1,2") raised
+        # TypeError when tested against this set and cost the whole figure.
+        if str(self.grid_style).strip() not in VALID_LINE_STYLES:
             self.grid_style = "dashed"
 
         self.grid_alpha = self._safe_float(self.grid_alpha, 0.3, 0, 1)
@@ -525,7 +549,9 @@ class PCAPlotFESHeatmapSettings(PlotSettingsBase):
         self.n_levels = self._safe_int(self.n_levels, 12, 3, 100)
 
         # ---- grid ----
-        if self.grid_style not in VALID_LINE_STYLES:
+        # str() first: an unhashable value (a list, from "grid_style = 1,2") raised
+        # TypeError when tested against this set and cost the whole figure.
+        if str(self.grid_style).strip() not in VALID_LINE_STYLES:
             self.grid_style = "dashed"
 
         self.grid_alpha = self._safe_float(self.grid_alpha, 0.3, 0, 1)
@@ -669,7 +695,9 @@ class PCAPlotProbabilityHeatmapSettings(PlotSettingsBase):
         self.n_levels = self._safe_int(self.n_levels, 12, 3, 100)
 
         # ---- grid ----
-        if self.grid_style not in VALID_LINE_STYLES:
+        # str() first: an unhashable value (a list, from "grid_style = 1,2") raised
+        # TypeError when tested against this set and cost the whole figure.
+        if str(self.grid_style).strip() not in VALID_LINE_STYLES:
             self.grid_style = "dashed"
 
         self.grid_alpha = self._safe_float(self.grid_alpha, 0.3, 0, 1)

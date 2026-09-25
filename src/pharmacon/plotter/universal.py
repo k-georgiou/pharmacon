@@ -13,6 +13,7 @@ from itertools import combinations
 from pathlib import Path
 from typing import List, Tuple, Dict
 
+import functools
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.ndimage import gaussian_filter, minimum_filter
@@ -55,6 +56,27 @@ logger: PharmaconLogger = get_logger(__name__)
 
 
 
+
+
+def isolated_rc(fn):
+    """
+    Runs a plot function with matplotlib's global state restored afterwards.
+
+    Every plotter assigns global rcParams - ``font.family`` above all - and none of them
+    put the previous value back, so whatever one plot set leaked into every plot drawn
+    after it in the same run. A font named in one config section silently restyled the
+    figures of sections that never mentioned a font, and which figures changed depended
+    on the order they happened to be rendered in. Wrapping each plot means one plot's
+    styling cannot reach the next.
+
+    :param fn: The plot function to wrap.
+    :return: The wrapped function.
+    """
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        with plt.rc_context():
+            return fn(*args, **kwargs)
+    return wrapper
 
 
 def _apply_presentation(ax, settings) -> None:
@@ -295,6 +317,7 @@ def _get_x_value(attrs, frame: int, x_axis: str) -> float:
     raise ValueError("settings.x_axis must be one of: time_ps, time_ns, time_us, frame_index")
 
 
+@isolated_rc
 def plot_pta_timeseries_from_file(pta_file,
                                   *,
                                   group_name: str,
@@ -521,6 +544,7 @@ def plot_pta_timeseries_from_file(pta_file,
         _plot(keys, suffix="")
 
 
+@isolated_rc
 def plot_pta_rmsf_from_file(pta_file,
                             *,
                             group_name: str = "rmsf",
@@ -806,6 +830,7 @@ def plot_pta_rmsf_from_file(pta_file,
         _plot(keys, suffix="")
 
 
+@isolated_rc
 def plot_pca_timeseries_from_file(pta_file,
                                   *,
                                   group_name: str = "pca",
@@ -913,6 +938,7 @@ def plot_pca_timeseries_from_file(pta_file,
     logger.info(f"Saved PCA timeseries → {out_path}")
 
 
+@isolated_rc
 def plot_pca_scatter_from_file(pta_file,
                                *,
                                group_name: str = "pca",
@@ -963,6 +989,11 @@ def plot_pca_scatter_from_file(pta_file,
     logger.debug("Collected %d point(s) for PC%d vs PC%d",
                  len(x_vals), settings.pc_x, settings.pc_y)
 
+    # font_family was declared and documented on this plot but never applied, so the
+    # figure silently used whatever font the previously drawn plot had left in the
+    # global rcParams. Each plot now sets its own; the CLI restores the state after.
+    plt.rcParams["font.family"] = settings.font_family
+
     fig, ax = plt.subplots(
         figsize=(settings.fig_size_width, settings.fig_size_height),
         dpi=settings.fig_dpi,
@@ -981,11 +1012,20 @@ def plot_pca_scatter_from_file(pta_file,
     if not settings.disable_colorbar:
         plt.colorbar(sc, ax=ax, label="Time (ps)")
 
-    ax.set_xlabel(f"PC{settings.pc_x}")
-    ax.set_ylabel(f"PC{settings.pc_y}")
+    # x_label / y_label / the font sizes were all declared, documented and validated on
+    # this plot, and none of them reached the axes: the labels were hard-coded from the
+    # component numbers and nothing passed a font size. They are honoured now, falling
+    # back to the component names when no label is given.
+    ax.set_xlabel(settings.x_label or f"PC{settings.pc_x}",
+                  fontsize=settings.font_size_label)
+    ax.set_ylabel(settings.y_label or f"PC{settings.pc_y}",
+                  fontsize=settings.font_size_label)
+    ax.tick_params(labelsize=settings.font_size_ticks)
 
     if not settings.disable_title:
-        ax.set_title(settings.fig_title)
+        ax.set_title(settings.fig_title,
+                     fontsize=settings.font_size_title,
+                     fontweight=settings.font_weight_title)
 
     if settings.enable_grid:
         ax.grid(True, linestyle=settings.grid_style, alpha=settings.grid_alpha)
@@ -1002,6 +1042,7 @@ def plot_pca_scatter_from_file(pta_file,
     logger.info(f"Saved PCA scatter → {out_path}")
 
 
+@isolated_rc
 def plot_pca_variance_ratio_from_file(pta_file,
                                       *,
                                       group_name: str = "pca",
@@ -1054,6 +1095,11 @@ def plot_pca_variance_ratio_from_file(pta_file,
 
     logger.debug("Loaded %d component(s) with variance ratios", len(pcs))
 
+    # font_family was declared and documented on this plot but never applied, so the
+    # figure silently used whatever font the previously drawn plot had left in the
+    # global rcParams. Each plot now sets its own; the CLI restores the state after.
+    plt.rcParams["font.family"] = settings.font_family
+
     fig, ax = plt.subplots(
         figsize=(settings.fig_size_width, settings.fig_size_height),
         dpi=settings.fig_dpi,
@@ -1071,11 +1117,16 @@ def plot_pca_variance_ratio_from_file(pta_file,
             alpha=settings.cumulative_alpha,
         )
 
-    ax.set_xlabel(settings.x_label)
-    ax.set_ylabel(settings.y_label)
+    # The font sizes on this plot were declared, documented and validated, and none of
+    # them reached the axes - every label and the title were drawn at matplotlib's size.
+    ax.set_xlabel(settings.x_label, fontsize=settings.font_size_label)
+    ax.set_ylabel(settings.y_label, fontsize=settings.font_size_label)
+    ax.tick_params(labelsize=settings.font_size_ticks)
 
     if not settings.disable_title:
-        ax.set_title(settings.fig_title)
+        ax.set_title(settings.fig_title,
+                     fontsize=settings.font_size_title,
+                     fontweight=settings.font_weight_title)
 
     if settings.enable_grid:
         ax.grid(True, linestyle=settings.grid_style, alpha=settings.grid_alpha)
@@ -1370,6 +1421,7 @@ def _build_pca_fes_surface(x: np.ndarray,
     }
 
 
+@isolated_rc
 def plot_pca_probability_from_file(pta_file,
                                    *,
                                    group_name: str = "pca",
@@ -1539,6 +1591,7 @@ def plot_pca_probability_from_file(pta_file,
         logger.info(f"Saved combined PCA probability heatmap → {out_path}")
 
 
+@isolated_rc
 def plot_pca_fes_from_file(pta_file,
                            *,
                            group_name: str = "pca",

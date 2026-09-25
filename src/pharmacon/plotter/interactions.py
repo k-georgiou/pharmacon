@@ -30,6 +30,7 @@ from matplotlib.colors import is_color_like
 
 import networkx as nx
 from pharmacon.logger import get_logger, PharmaconLogger
+from pharmacon.plotter.universal import isolated_rc
 
 from pharmacon.constants import (PLIStackedSettings1,  PLIStackedSettings2, PLIHeatmapSettings1, PLIHeatmapSettings2,
                                  PLIPieChartsSettings1, PLILigandMonitorSettings,
@@ -165,6 +166,28 @@ warnings.filterwarnings("ignore")
 logger: PharmaconLogger = get_logger(__name__)
 
 
+def _safe_range_dict(value, field_name: str) -> Dict[str, Tuple[int, int]]:
+    """
+    Parses a resid-range mapping, degrading to "no mapping" instead of raising.
+
+    ``alter_chains_str`` and ``alter_segments_str`` are not checked by any
+    ``_validate_fields``, so a malformed value passed validation and only blew up here,
+    mid-render. The exception was caught far above as a failed plot: the figure was never
+    written, the log file recorded nothing, and the run still exited 0. Relabelling
+    residues is cosmetic, so a syntax error costs the relabelling and nothing else.
+
+    :param value: The raw setting value.
+    :param field_name: Field name, for the warning message.
+    :return: The parsed mapping, or an empty mapping if it could not be parsed.
+    """
+    try:
+        return parse_range_dict(value)
+    except Exception as error:                              # noqa: BLE001 - reported
+        logger.warning(f"Invalid {field_name} ({error}); continuing without it")
+        return {}
+
+
+@isolated_rc
 def plot_protein_ligand_interactions_stacked_column_1_from_file(pta_file, *,
                                                                 group_name: str,
                                                                 mode_name: str,
@@ -264,10 +287,10 @@ def plot_protein_ligand_interactions_stacked_column_1_from_file(pta_file, *,
         return
 
     # ALTER CHAINS / SEGMENTS
-    chain_map = parse_range_dict(settings.alter_chains_str) \
+    chain_map = _safe_range_dict(settings.alter_chains_str, "alter_chains_str") \
         if settings.alter_chains and settings.alter_chains_str else {}
 
-    segment_map = parse_range_dict(settings.alter_segments_str) \
+    segment_map = _safe_range_dict(settings.alter_segments_str, "alter_segments_str") \
         if settings.alter_segments and settings.alter_segments_str else {}
 
     x_labels = []
@@ -404,11 +427,14 @@ def plot_protein_ligand_interactions_stacked_column_1_from_file(pta_file, *,
 
     # GRID
     if settings.enable_grid:
-        ax.grid(
-            linestyle=settings.grid_style,
-            color=settings.grid_color,
-            alpha=settings.grid_alpha,
-        )
+        # grid_linewidth is passed only when set, so the stroke width matplotlib
+        # chose before is untouched unless the user asks for a different one.
+        grid_kwargs = {"linestyle": settings.grid_style,
+                       "color": settings.grid_color,
+                       "alpha": settings.grid_alpha}
+        if settings.grid_linewidth is not None:
+            grid_kwargs["linewidth"] = settings.grid_linewidth
+        ax.grid(**grid_kwargs)
 
     # LEGEND
     if not settings.disable_legend:
@@ -427,11 +453,14 @@ def plot_protein_ligand_interactions_stacked_column_1_from_file(pta_file, *,
             leg.set_in_layout(False)
 
     # LAYOUT
+    # bottom was hard-coded at 0.25 while legend_margin_bottom, declared on this class
+    # and documented in the shipped config, was read only by the protein-protein
+    # plotter. The field's default is now 0.25, so the figure does not move.
     fig.subplots_adjust(
         left=0.08,
         right=0.98,
         top=0.92,
-        bottom=0.25
+        bottom=settings.legend_margin_bottom
     )
 
     if settings.tight_layout:
@@ -453,6 +482,7 @@ def plot_protein_ligand_interactions_stacked_column_1_from_file(pta_file, *,
     logger.info(f"Saved stacked column type 1 to {out_path}")
 
 
+@isolated_rc
 def plot_protein_ligand_interactions_stacked_column_2_from_file(pta_file, *,
                                                                 group_name: str,
                                                                 settings: PLIStackedSettings2,
@@ -609,10 +639,10 @@ def plot_protein_ligand_interactions_stacked_column_2_from_file(pta_file, *,
     processed.sort(key=lambda x: x[1])  # by resid
 
     # Label construction
-    chain_map = parse_range_dict(settings.alter_chains_str) \
+    chain_map = _safe_range_dict(settings.alter_chains_str, "alter_chains_str") \
         if settings.alter_chains and settings.alter_chains_str else {}
 
-    segment_map = parse_range_dict(settings.alter_segments_str) \
+    segment_map = _safe_range_dict(settings.alter_segments_str, "alter_segments_str") \
         if settings.alter_segments and settings.alter_segments_str else {}
 
     labels = []
@@ -744,13 +774,13 @@ def plot_protein_ligand_interactions_stacked_column_2_from_file(pta_file, *,
 
     # Grid
     if settings.enable_grid:
-        ax.grid(
-            True,
-            axis="y",
-            linestyle=settings.grid_style,
-            color=settings.grid_color,
-            alpha=settings.grid_alpha,
-        )
+        grid_kwargs = {"axis": "y",
+                       "linestyle": settings.grid_style,
+                       "color": settings.grid_color,
+                       "alpha": settings.grid_alpha}
+        if settings.grid_linewidth is not None:
+            grid_kwargs["linewidth"] = settings.grid_linewidth
+        ax.grid(True, **grid_kwargs)
 
     # Legend
     if not settings.disable_legend:
@@ -776,6 +806,11 @@ def plot_protein_ligand_interactions_stacked_column_2_from_file(pta_file, *,
     if settings.tight_layout:
         plt.tight_layout()
 
+    # Applied after tight_layout so an explicit margin wins. Left alone when unset,
+    # which is how this plot has always been laid out.
+    if settings.legend_margin_bottom is not None:
+        fig.subplots_adjust(bottom=settings.legend_margin_bottom)
+
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     fig.savefig(
@@ -791,6 +826,7 @@ def plot_protein_ligand_interactions_stacked_column_2_from_file(pta_file, *,
     return None
 
 
+@isolated_rc
 def plot_protein_ligand_interactions_heatmap_1_from_file(pta_file, *,
                                                          group_name: str,
                                                          settings: PLIHeatmapSettings1,
@@ -919,10 +955,10 @@ def plot_protein_ligand_interactions_heatmap_1_from_file(pta_file, *,
 
     labels = []
 
-    chain_map = parse_range_dict(settings.alter_chains_str) \
+    chain_map = _safe_range_dict(settings.alter_chains_str, "alter_chains_str") \
         if settings.alter_chains and settings.alter_chains_str else {}
 
-    segment_map = parse_range_dict(settings.alter_segments_str) \
+    segment_map = _safe_range_dict(settings.alter_segments_str, "alter_segments_str") \
         if settings.alter_segments and settings.alter_segments_str else {}
 
     for row_idx, ((resname, resid, chainid, segid), frames) in enumerate(filtered):
@@ -1057,6 +1093,13 @@ def plot_protein_ligand_interactions_heatmap_1_from_file(pta_file, *,
         )
 
         cbar.ax.tick_params(labelsize=settings.font_size_cbar)
+        # font_weight_cbar is declared and documented on most of these plots but reached
+        # nothing; its default is matplotlib's own weight, so no existing figure changes.
+        # Read defensively: not every plot with a colorbar declares the field.
+        _cbar_weight = getattr(settings, "font_weight_cbar", None)
+        if _cbar_weight:
+            for _cbar_label in cbar.ax.get_yticklabels() + cbar.ax.get_xticklabels():
+                _cbar_label.set_fontweight(_cbar_weight)
 
     # Layout
     if settings.tight_layout:
@@ -1077,6 +1120,7 @@ def plot_protein_ligand_interactions_heatmap_1_from_file(pta_file, *,
     return None
 
 
+@isolated_rc
 def plot_protein_ligand_interactions_heatmap_2_from_file(pta_file, *,
                                                          group_name: str,
                                                          settings: PLIHeatmapSettings2,
@@ -1322,6 +1366,13 @@ def plot_protein_ligand_interactions_heatmap_2_from_file(pta_file, *,
             pad=settings.cbar_pad,
         )
         cbar.ax.tick_params(labelsize=settings.font_size_cbar)
+        # font_weight_cbar is declared and documented on most of these plots but reached
+        # nothing; its default is matplotlib's own weight, so no existing figure changes.
+        # Read defensively: not every plot with a colorbar declares the field.
+        _cbar_weight = getattr(settings, "font_weight_cbar", None)
+        if _cbar_weight:
+            for _cbar_label in cbar.ax.get_yticklabels() + cbar.ax.get_xticklabels():
+                _cbar_label.set_fontweight(_cbar_weight)
         cbar.set_label(
             cbar_label,
             fontsize=settings.font_size_cbar,
@@ -1358,6 +1409,7 @@ def plot_protein_ligand_interactions_heatmap_2_from_file(pta_file, *,
     return None
 
 
+@isolated_rc
 def plot_protein_ligand_interactions_pie_charts_from_file(pta_file, *,
                                                           group_name: str,
                                                           settings: PLIPieChartsSettings1,
@@ -1693,6 +1745,7 @@ def plot_protein_ligand_interactions_pie_charts_from_file(pta_file, *,
 
 
 
+@isolated_rc
 def plot_protein_ligand_interactions_ligand_monitor_from_file(pta_file, *,
                                                               group_name: str,
                                                               settings: PLILigandMonitorSettings,
@@ -1785,10 +1838,10 @@ def plot_protein_ligand_interactions_ligand_monitor_from_file(pta_file, *,
 
     # Apply residue transformations
 
-    chain_map = parse_range_dict(settings.alter_chains_str) \
+    chain_map = _safe_range_dict(settings.alter_chains_str, "alter_chains_str") \
         if settings.alter_chains and settings.alter_chains_str else {}
 
-    segment_map = parse_range_dict(settings.alter_segments_str) \
+    segment_map = _safe_range_dict(settings.alter_segments_str, "alter_segments_str") \
         if settings.alter_segments and settings.alter_segments_str else {}
 
     residue_labels = []
@@ -1933,6 +1986,19 @@ def plot_protein_ligand_interactions_ligand_monitor_from_file(pta_file, *,
             pad=settings.cbar_pad,
         )
         cbar.ax.tick_params(labelsize=settings.font_size_cbar)
+        # font_weight_cbar is declared and documented on most of these plots but reached
+        # nothing; its default is matplotlib's own weight, so no existing figure changes.
+        # Read defensively: not every plot with a colorbar declares the field.
+        _cbar_weight = getattr(settings, "font_weight_cbar", None)
+        if _cbar_weight:
+            for _cbar_label in cbar.ax.get_yticklabels() + cbar.ax.get_xticklabels():
+                _cbar_label.set_fontweight(_cbar_weight)
+
+    # disable_ticks is declared, validated and documented on this plot, and was read
+    # by nothing. The default is False, so no existing figure changes.
+    if settings.disable_ticks:
+        ax.set_xticks([])
+        ax.set_yticks([])
 
     # Gridlines
     if settings.enable_grid:
@@ -2363,10 +2429,10 @@ def _collect_ppi_pairs(pta_file, group_name: str, settings):
 
     pair_frames = {}
 
-    chain_map = parse_range_dict(settings.alter_chains_str) \
+    chain_map = _safe_range_dict(settings.alter_chains_str, "alter_chains_str") \
         if settings.alter_chains and settings.alter_chains_str else {}
 
-    seg_map = parse_range_dict(settings.alter_segments_str) \
+    seg_map = _safe_range_dict(settings.alter_segments_str, "alter_segments_str") \
         if settings.alter_segments and settings.alter_segments_str else {}
 
     def build_label(resname, resid, chainid, segid):
@@ -2465,6 +2531,7 @@ def _collect_ppi_pairs(pta_file, group_name: str, settings):
     return pair_frames, frame_indices, total_frames
 
 
+@isolated_rc
 def plot_protein_protein_timeline_pairs_from_file(pta_file, *,
                                                   group_name: str,
                                                   settings: PPITimelinePairsSettings,
@@ -2550,6 +2617,13 @@ def plot_protein_protein_timeline_pairs_from_file(pta_file, *,
             pad=settings.cbar_pad,
         )
         cbar.ax.tick_params(labelsize=settings.font_size_cbar)
+        # font_weight_cbar is declared and documented on most of these plots but reached
+        # nothing; its default is matplotlib's own weight, so no existing figure changes.
+        # Read defensively: not every plot with a colorbar declares the field.
+        _cbar_weight = getattr(settings, "font_weight_cbar", None)
+        if _cbar_weight:
+            for _cbar_label in cbar.ax.get_yticklabels() + cbar.ax.get_xticklabels():
+                _cbar_label.set_fontweight(_cbar_weight)
 
     if not settings.disable_x_axis:
         # Thin frame ticks so labels don't overlap on long trajectories.
@@ -2656,9 +2730,9 @@ def build_ppi_heatmap_matrix(pta_file, *, group_name: str, mode_name: str,
     if getattr(dset, "size", 0) == 0:
         raise RuntimeError(f"Dataset empty: {dset_path}")
 
-    chain_map = parse_range_dict(settings.alter_chains_str) \
+    chain_map = _safe_range_dict(settings.alter_chains_str, "alter_chains_str") \
         if settings.alter_chains and settings.alter_chains_str else {}
-    seg_map = parse_range_dict(settings.alter_segments_str) \
+    seg_map = _safe_range_dict(settings.alter_segments_str, "alter_segments_str") \
         if settings.alter_segments and settings.alter_segments_str else {}
 
     def build_label(res) -> Tuple[str, int]:
@@ -2716,6 +2790,7 @@ def build_ppi_heatmap_matrix(pta_file, *, group_name: str, mode_name: str,
     return residue_labels, matrix
 
 
+@isolated_rc
 def plot_protein_protein_heatmap_freq_from_file(pta_file,
                                                 *,
                                                 group_name: str,
@@ -2868,6 +2943,12 @@ def plot_protein_protein_heatmap_freq_from_file(pta_file,
     else:
         ax.set_yticks([])
 
+    # disable_ticks is declared, validated and documented on this plot, and was read
+    # by nothing. The default is False, so no existing figure changes.
+    if settings.disable_ticks:
+        ax.set_xticks([])
+        ax.set_yticks([])
+
     # ---------------- Gridlines ----------------
     if settings.enable_grid:
         ax.set_xticks(np.arange(-0.5, len(residue_labels), 1), minor=True)
@@ -2890,6 +2971,13 @@ def plot_protein_protein_heatmap_freq_from_file(pta_file,
         cbar.ax.tick_params(
             labelsize=settings.font_size_cbar,
         )
+        # font_weight_cbar is declared and documented on most of these plots but reached
+        # nothing; its default is matplotlib's own weight, so no existing figure changes.
+        # Read defensively: not every plot with a colorbar declares the field.
+        _cbar_weight = getattr(settings, "font_weight_cbar", None)
+        if _cbar_weight:
+            for _cbar_label in cbar.ax.get_yticklabels() + cbar.ax.get_xticklabels():
+                _cbar_label.set_fontweight(_cbar_weight)
 
     # ---------------- Layout ----------------
     if settings.tight_layout:
@@ -2911,6 +2999,7 @@ def plot_protein_protein_heatmap_freq_from_file(pta_file,
 
 
 
+@isolated_rc
 def plot_protein_protein_interactions_stacked_column_from_file(
     pta_file,
     *,
@@ -2965,10 +3054,10 @@ def plot_protein_protein_interactions_stacked_column_from_file(
     # -------------------------------------------------
     # REPRESENTATION LOGIC
     # -------------------------------------------------
-    chain_map = parse_range_dict(settings.alter_chains_str) \
+    chain_map = _safe_range_dict(settings.alter_chains_str, "alter_chains_str") \
         if settings.alter_chains and settings.alter_chains_str else {}
 
-    seg_map = parse_range_dict(settings.alter_segments_str) \
+    seg_map = _safe_range_dict(settings.alter_segments_str, "alter_segments_str") \
         if settings.alter_segments and settings.alter_segments_str else {}
 
     def build_label(resname, resid, chainid, segid):
@@ -3069,7 +3158,12 @@ def plot_protein_protein_interactions_stacked_column_from_file(
     # -------------------------------------------------
     # STANDARD FIGSIZE (STRICT SETTINGS)
     # -------------------------------------------------
-    fig_height = max(settings.fig_size_height, 10.0)  # hard minimum protection
+    # The height asked for is the height used. This used to be
+    # max(settings.fig_size_height, 10.0), which silently collapsed the whole lower half
+    # of the validated range (1-200) onto a single value: the shipped example config asks
+    # for 4 and got 10, with nothing said anywhere. A figure that comes out taller than
+    # requested is easier to diagnose than a setting that does nothing.
+    fig_height = settings.fig_size_height
 
     fig, ax = plt.subplots(
         figsize=(settings.fig_size_width, fig_height),
@@ -3163,11 +3257,31 @@ def plot_protein_protein_interactions_stacked_column_from_file(
         )
         ax.tick_params(axis="y", labelsize=settings.font_size_y)
 
+    # y_tick_rotation and y_limit_min/max are declared on this class and documented in
+    # its config, but their only readers were the protein-LIGAND stacked plotters, so
+    # they did nothing here. Each is a no-op at its default (0 and unset respectively).
+    if settings.y_tick_rotation:
+        for label in ax.get_yticklabels():
+            label.set_rotation(settings.y_tick_rotation)
+
+    if settings.y_limit_min is not None or settings.y_limit_max is not None:
+        low, high = ax.get_ylim()
+        ax.set_ylim(
+            settings.y_limit_min if settings.y_limit_min is not None else low,
+            settings.y_limit_max if settings.y_limit_max is not None else high,
+        )
+
     if settings.enable_grid:
-        ax.grid(True,
-                linestyle=settings.grid_style,
-                alpha=settings.grid_alpha,
-                axis="y")
+        # Neither colour nor width reached this call before, so both keys were inert.
+        # Each is passed only when set, leaving the current appearance untouched.
+        grid_kwargs = {"linestyle": settings.grid_style,
+                       "alpha": settings.grid_alpha,
+                       "axis": "y"}
+        if settings.grid_color is not None:
+            grid_kwargs["color"] = settings.grid_color
+        if settings.grid_linewidth is not None:
+            grid_kwargs["linewidth"] = settings.grid_linewidth
+        ax.grid(True, **grid_kwargs)
 
     if not settings.disable_legend:
         ax.legend(

@@ -449,7 +449,10 @@ class ProteinProteinInteractionsStackedColumnSettings(PlotSettingsBase):
 
     # Figure
     fig_size_width: float = 30
-    fig_size_height: float = 4
+    # 10 is the height this plot has always been drawn at: the plotter clamped the
+    # value to a minimum of 10, so the declared default of 4 never took effect.
+    # The clamp is gone and the value is honoured, so the default states the truth.
+    fig_size_height: float = 10
     fig_dpi: int = 300
     fig_basename: str = "ppi_stacked_column"
     fig_format: str = "png"
@@ -493,6 +496,11 @@ class ProteinProteinInteractionsStackedColumnSettings(PlotSettingsBase):
     enable_grid: bool = True
     grid_style: str = "--"
     grid_alpha: float = 0.5
+    # Neither of these existed, so the grid colour and stroke width of this plot could
+    # not be set at all: the keys were accepted by the config and silently discarded.
+    # Unset leaves exactly what matplotlib drew before.
+    grid_color: str | None = None
+    grid_linewidth: float | None = None
 
     # Legend
     disable_legend: bool = True
@@ -539,7 +547,7 @@ class ProteinProteinInteractionsStackedColumnSettings(PlotSettingsBase):
     def _validate_fields(self) -> None:
         # Figure basics
         self.fig_size_width = self._safe_float(self.fig_size_width, 30.0, 1.0, 200.0)
-        self.fig_size_height = self._safe_float(self.fig_size_height, 4.0, 1.0, 200.0)
+        self.fig_size_height = self._safe_float(self.fig_size_height, 10.0, 1.0, 200.0)
         self.fig_dpi = self._safe_int(self.fig_dpi, 300, 50, 2000)
 
         ext = f".{str(self.fig_format).strip().lower()}"
@@ -591,6 +599,10 @@ class ProteinProteinInteractionsStackedColumnSettings(PlotSettingsBase):
 
         # Grid
         self.enable_grid = self._safe_bool(self.enable_grid, True)
+        if not self._is_unset(self.grid_color):
+            self.grid_color = self._safe_color(self.grid_color, None)
+        if not self._is_unset(self.grid_linewidth):
+            self.grid_linewidth = self._safe_float(self.grid_linewidth, None, 0.1, 10)
         self.grid_style = str(self.grid_style).strip().lower()
         if self.grid_style not in VALID_LINE_STYLES:
             self._warn(f"Invalid grid_style '{self.grid_style}', using '--'")

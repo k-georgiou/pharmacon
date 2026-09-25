@@ -21,7 +21,7 @@ import numpy as np
 
 from pharmacon.logger import get_logger
 from pharmacon.constants.smarts import AA3_to_AA1
-from pharmacon.plotter.universal import _get_x_value, _apply_presentation
+from pharmacon.plotter.universal import _get_x_value, _apply_presentation, isolated_rc
 
 
 __all__ = [
@@ -33,6 +33,7 @@ __all__ = [
 logger = get_logger(__name__)
 
 
+@isolated_rc
 def plot_hbonds_count_per_frame_from_file(pta_file, *, group_name: str,
                                           settings, out_dir: Path,
                                           is_merged: bool = False) -> None:
@@ -129,6 +130,7 @@ def _pair_label(r1, r2, settings) -> str:
     return f"{one(r1)}–{one(r2)}"
 
 
+@isolated_rc
 def plot_hbonds_occupancy_from_file(pta_file, *, group_name: str, mode_name: str,
                                     settings, out_dir: Path,
                                     attach_to_name: str = "",
@@ -224,6 +226,7 @@ def _residue_label(res, settings) -> str:
     return label
 
 
+@isolated_rc
 def plot_hbonds_network_from_file(pta_file, *, group_name: str,
                                   settings, out_dir: Path,
                                   is_merged: bool = False) -> None:

@@ -216,6 +216,9 @@ class ProteinLigandInteractionsStackedColumn1PlotSettings(PlotSettingsBase):
     grid_style: str = "dashed"
     grid_color: str = "lightgray"
     grid_alpha: float = 0.5
+    # Unset means "leave the width matplotlib chose", which is what this plot has
+    # always drawn. Set it to control the grid stroke width.
+    grid_linewidth: float | None = None
 
     bar_width: float = 0.8
     bar_edge_color: str = "black"
@@ -230,7 +233,10 @@ class ProteinLigandInteractionsStackedColumn1PlotSettings(PlotSettingsBase):
     legend_n_col: int = 4
     legend_frame: bool = True
     legend_alpha: float = 1.0
-    legend_margin_bottom: float = 0.02
+    # 0.25 is the bottom margin this plot has always been drawn with; the value was
+    # hard-coded in the plotter and this field was never read. It is honoured now,
+    # so the default has to be what the figure already used.
+    legend_margin_bottom: float = 0.25
 
     color_hydrophobic: str = "#b39ddb"
     color_hydrogen_bonds: str = "#f1c40f"
@@ -371,6 +377,8 @@ class ProteinLigandInteractionsStackedColumn1PlotSettings(PlotSettingsBase):
             self.grid_style = "dashed"
 
         self.grid_color = self._safe_color(self.grid_color, "lightgray")
+        if not self._is_unset(self.grid_linewidth):
+            self.grid_linewidth = self._safe_float(self.grid_linewidth, None, 0.1, 10)
         self.grid_alpha = self._safe_float(self.grid_alpha, 0.5, 0.0, 1.0)
 
         # BARS
@@ -402,7 +410,7 @@ class ProteinLigandInteractionsStackedColumn1PlotSettings(PlotSettingsBase):
         self.legend_frame = self._safe_bool(self.legend_frame, True)
         self.legend_alpha = self._safe_float(self.legend_alpha, 1.0, 0.0, 1.0)
         self.legend_bbox_y = self._safe_float(self.legend_bbox_y, -0.37, -2.0, 2.0)
-        self.legend_margin_bottom = self._safe_float(self.legend_margin_bottom, 0.02, 0.0, 1.0)
+        self.legend_margin_bottom = self._safe_float(self.legend_margin_bottom, 0.25, 0.0, 1.0)
 
         # COLORS
         self.color_hydrophobic = self._safe_color(self.color_hydrophobic, "#b39ddb")
@@ -511,6 +519,9 @@ class ProteinLigandInteractionsStackedColumn2PlotSettings(PlotSettingsBase):
     grid_style: str = "dashed"
     grid_color: str = "lightgray"
     grid_alpha: float = 0.5
+    # Unset means "leave the width matplotlib chose", which is what this plot has
+    # always drawn. Set it to control the grid stroke width.
+    grid_linewidth: float | None = None
 
     bar_width: float = 0.8
     bar_edge_color: str = "black"
@@ -525,7 +536,10 @@ class ProteinLigandInteractionsStackedColumn2PlotSettings(PlotSettingsBase):
     legend_n_col: int = 2
     legend_frame: bool = True
     legend_alpha: float = 1.0
-    legend_margin_bottom: float = 0.02
+    # This plot lays itself out with tight_layout and never set a bottom margin, so
+    # there is no fixed value that reproduces its current look: unset means
+    # "leave the layout alone", and a value applies one.
+    legend_margin_bottom: float | None = None
 
     color_backbone: str = "#b28dff"
     color_side_chain: str = "#aff8db"
@@ -655,6 +669,8 @@ class ProteinLigandInteractionsStackedColumn2PlotSettings(PlotSettingsBase):
             self._warn(f"Invalid grid_style '{self.grid_style}', using 'dashed'")
             self.grid_style = "dashed"
 
+        if not self._is_unset(self.grid_linewidth):
+            self.grid_linewidth = self._safe_float(self.grid_linewidth, None, 0.1, 10)
         self.grid_color = self._safe_color(self.grid_color, "lightgray")
         self.grid_alpha = self._safe_float(self.grid_alpha, 0.5, 0.0, 1.0)
 
@@ -687,7 +703,9 @@ class ProteinLigandInteractionsStackedColumn2PlotSettings(PlotSettingsBase):
         self.legend_frame = self._safe_bool(self.legend_frame, True)
         self.legend_alpha = self._safe_float(self.legend_alpha, 1.0, 0.0, 1.0)
         self.legend_bbox_y = self._safe_float(self.legend_bbox_y, 0.0, -2.0, 2.0)
-        self.legend_margin_bottom = self._safe_float(self.legend_margin_bottom, 0.02, 0.0, 1.0)
+        if not self._is_unset(self.legend_margin_bottom):
+            self.legend_margin_bottom = self._safe_float(
+                self.legend_margin_bottom, None, 0.0, 1.0)
 
         # COLORS
         self.color_backbone = self._safe_color(self.color_backbone, "#b28dff")

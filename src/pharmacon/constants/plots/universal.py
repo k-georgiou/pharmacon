@@ -214,9 +214,11 @@ class PlotUniversalSettings(PlotSettingsBase):
 
         # ---- line colors ----
         # A single color from the INI arrives as a plain string; split it so we
-        # don't iterate the string character-by-character.
-        if isinstance(self.line_colors, str):
-            self.line_colors = [c.strip() for c in self.line_colors.split(",") if c.strip()]
+        # don't iterate the string character-by-character. A single *unquoted* entry
+        # arrives as a bare number, which used to raise out of validation and cost the
+        # whole figure, so every shape is normalised to a list first.
+        self.line_colors = self._safe_sequence(
+            self.line_colors, ["#1f77b4"], "line_colors")
 
         validated = []
         for c in self.line_colors:

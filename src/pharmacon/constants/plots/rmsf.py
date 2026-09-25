@@ -294,9 +294,11 @@ class RMSFPlotSettings(PlotSettingsBase):
         self.xtick_max_labels = self._safe_int(self.xtick_max_labels, 200, 5, 100000)
 
         # Accept comma-separated strings (INI loader delivers them this way
-        # for list-typed fields). Already-listy inputs pass through.
-        if isinstance(self.line_colors, str):
-            self.line_colors = [c.strip() for c in self.line_colors.split(",") if c.strip()]
+        # for list-typed fields). Already-listy inputs pass through, and a single
+        # unquoted entry - which arrives as a bare number and used to raise out of
+        # validation, costing the whole figure - is read as a one-element list.
+        self.line_colors = self._safe_sequence(
+            self.line_colors, ["#1f77b4"], "line_colors")
 
         # Validate colors
         validated = []

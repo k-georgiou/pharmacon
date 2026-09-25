@@ -140,7 +140,24 @@ class PlotSettingsBase:
             if key in valid_fields:
                 setattr(instance, key, value)
 
+        # A key this plot does not have used to vanish here without a word, so a typo
+        # ("grid_colour"), a control borrowed from a section that does support it
+        # ("enable_legend"), or a setting this plot simply never had all looked like they
+        # had been applied. They are reported instead.
+        #
+        # Deliberately NOT routed through self._warn: that counter is compared against
+        # --maxwarnings, which defaults to 0, so counting these would make a single stray
+        # key discard the whole settings object and lose the figure. An unrecognised key
+        # is worth saying out loud, never worth failing over.
+        unknown = [key for key in overrides if key not in valid_fields]
+        if unknown:
+            logger.warning(
+                f"{cls.__name__}: ignoring unrecognised setting(s) "
+                f"{', '.join(sorted(unknown))} - not a field of this plot"
+            )
+
         instance.validate()
+        instance._unknown_keys = sorted(unknown)
         return instance
 
     # VALIDATION ENTRYPOINT
@@ -322,6 +339,42 @@ class PlotSettingsBase:
 
         self._warn(f"Invalid color '{value}', using default '{default}'")
         return default
+
+    def _safe_sequence(self, value: Any, default: list, field_name: str) -> list:
+        """
+        Turns a config value into a list, whatever shape it arrived in.
+
+        List-valued keys are written in an INI as ``a, b, c`` and reach us as a string, so
+        the validators iterated the value directly. A single unquoted entry, though, is
+        parsed as a bare number: ``line_colors = 5`` and ``pcs = 1`` arrive as ``int``,
+        and iterating those raised ``TypeError`` out of validation. Nothing caught it as a
+        coercion problem, so the whole settings object was discarded and the figure was
+        never written - while the run still exited 0.
+
+        A scalar is read as a one-element list, which is what someone writing a single
+        value plainly meant. Anything genuinely unusable warns and falls back, which is
+        the behaviour every other key already documents.
+
+        :param value: The raw value, of any type.
+        :param default: The list to fall back to when the value cannot be used.
+        :param field_name: Field name, for the warning message.
+        :return: A list, never None.
+        """
+        if self._is_unset(value):
+            return list(default)
+
+        if isinstance(value, str):
+            return [part.strip() for part in value.split(",") if part.strip()]
+
+        if isinstance(value, (list, tuple, set)):
+            return list(value)
+
+        # A lone scalar: the single-entry case, e.g. "pcs = 1" or a single colour.
+        if isinstance(value, (int, float, bool)):
+            return [value]
+
+        self._warn(f"Invalid {field_name} '{value}', using default")
+        return list(default)
 
     def _safe_cmap(self, value: Any, default: str = "viridis") -> str:
         """
