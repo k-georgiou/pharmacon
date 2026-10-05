@@ -584,6 +584,7 @@ def _worker_process_frames(*,
                            unwrapping: bool,
                            frame_indices: list,
                            disable_flags: dict,
+                           water_selection: str,
                            atom_indices: dict,
                            db_path,
                            log_file=None,
@@ -658,6 +659,7 @@ def _worker_process_frames(*,
 
     frame_kwargs = dict(
         **disable_flags,
+        water_selection=water_selection,
         **atom_groups,
         u=u,
     )
@@ -897,7 +899,8 @@ def run(args: argparse.Namespace) -> None:
         log.info("Detecting atoms...")
         atom_groups = _detect_atoms(u, group1_atoms, group2_atoms, "Protein", "Ligand")
 
-        frame_kwargs = dict(**disable_flags, **atom_groups, u=u)
+        frame_kwargs = dict(**disable_flags, **atom_groups, u=u,
+                            water_selection=water_selection)
 
         with PTAFile(args.output, overwrite=args.overwrite,
                      command="Trajectory Analysis", subcommand="pl-interactions") as pta:
@@ -1044,6 +1047,7 @@ def run(args: argparse.Namespace) -> None:
                         unwrapping=unwrapping,
                         frame_indices=chunk,
                         disable_flags=disable_flags,
+                        water_selection=water_selection,
                         atom_indices=atom_indices,
                         db_path=db_path,
                         log_queue=log_queue,

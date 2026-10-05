@@ -94,11 +94,18 @@ NA_RES: Final[Tuple[str, ...]] = (
     "A", "C", "G", "U", "DA", "DC", "DG", "DT", "ADE", "CYT", "GUA", "URA", "THY",
     "RGU", "RCY", "RAN")
 
+# TP3/TP4/TP5 are the Amber spellings of the TIP3P/TIP4P/TIP5P models. Only the
+# transposed T3P/T4P/T5P forms were listed, so an Amber-built system's water matched
+# nothing here and water-mediated contacts were silently reported as absent.
 WATER_RESIDUES: Final[Tuple[str, ...]] = (
     "HOH", "WAT", "TIP3", "TIP4", "TIP5", "SPC", "SPE", "T3P", "T4P", "T5P",
+    "TP3", "TP4", "TP5",
 )
 
-WATER_RESIDUES_MDA_SELECTION_STR = "resname HOH or resname WAT or resname TIP3 or resname TIP4 or resname TIP5 or resname SPC or resname SPE or resname T3P or resname T4P or resname T5P"
+# Derived from WATER_RESIDUES so the two cannot drift apart: a name present in one
+# and missing from the other is how water goes undetected.
+WATER_RESIDUES_MDA_SELECTION_STR = " or ".join(
+    f"resname {name}" for name in WATER_RESIDUES)
 
 ION_RES_TO_ELT: Final[Dict[str, str]] = {
     "CL": "Cl", "CL-": "Cl", "CLA": "Cl", "CL1": "Cl",

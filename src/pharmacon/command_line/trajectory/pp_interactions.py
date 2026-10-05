@@ -608,7 +608,8 @@ def run(args: argparse.Namespace) -> None:
         log.info("Detecting atoms...")
         atom_groups = _detect_atoms(u, group1_atoms, group2_atoms, "Protein 1", "Protein 2")
 
-        frame_kwargs = dict(**disable_flags, **atom_groups, u=u)
+        frame_kwargs = dict(**disable_flags, **atom_groups, u=u,
+                            water_selection=water_selection)
 
         with PTAFile(args.output, overwrite=args.overwrite,
                      command="Trajectory Analysis", subcommand="pp-interactions") as pta:
@@ -752,6 +753,7 @@ def run(args: argparse.Namespace) -> None:
                         unwrapping=unwrapping,
                         frame_indices=chunk,
                         disable_flags=disable_flags,
+                        water_selection=water_selection,
                         atom_indices=atom_indices,
                         db_path=db_path,
                         log_queue=log_queue,

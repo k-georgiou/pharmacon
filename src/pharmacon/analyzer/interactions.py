@@ -2058,6 +2058,12 @@ def interactions_process_frame(**kwargs) -> List[Tuple[Tuple, ...]]:
                 group2_donors=kwargs["hydrogen_bond_donor_atoms_group2"],
                 box=box,
                 u=kwargs["u"],
+                # --water was validated by the command and then dropped: it never
+                # reached this call, so the built-in residue-name list was always used
+                # and a force field whose water is named anything else - Amber's TP3,
+                # for one - found no water at all and reported no bridges.
+                water_selection=kwargs.get(
+                    "water_selection", WATER_RESIDUES_MDA_SELECTION_STR),
                 second_degree=kwargs.get("second_degree_water_bridges", False)
             )
         )

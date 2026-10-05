@@ -60,6 +60,49 @@ warnings.filterwarnings("ignore")
 logger: PharmaconLogger = get_logger(__name__)
 
 
+def _substructure_match_limit(rdkit_mol: Chem.Mol) -> int:
+    """
+    Returns the ceiling to give ``GetSubstructMatches`` for this molecule.
+
+    RDKit caps ``GetSubstructMatches`` at 1,000 matches by default and returns the
+    truncated list without raising or warning. The molecule handed to the detectors is
+    the whole selection converted in one piece, not one residue at a time, so the cap is
+    reached by a protein rather than by a ligand: the hydrophobic C-H pattern alone
+    matches about 4.5 times per residue, so anything past roughly 220 residues lost the
+    remainder. Matches come back in atom order, so what was dropped was not a random
+    sample but everything after a cut-off - the C-terminal part of the chain, silently
+    carrying no hydrophobic hydrogens at all.
+
+    One atom cannot take part in an unbounded number of matches for the patterns used
+    here, so a ceiling proportional to the molecule is generous and still bounded.
+
+    :param rdkit_mol: The molecule the patterns will be matched against.
+    :return: The maximum number of matches to accept for one pattern.
+    """
+    return max(1000, rdkit_mol.GetNumAtoms() * 10)
+
+
+def _warn_if_truncated(matches: Sequence, limit: int, smarts: str, label: str) -> None:
+    """
+    Warns when a pattern returned exactly as many matches as it was allowed.
+
+    Hitting the ceiling cannot be told apart from happening to match that many, so this
+    reports rather than corrects. It exists so a future pattern or a far larger system
+    cannot quietly reintroduce the truncation this limit was raised to remove.
+
+    :param matches: The matches returned for the pattern.
+    :param limit: The ceiling the pattern was matched under.
+    :param smarts: The pattern, for the message.
+    :param label: What is being detected, for the message.
+    """
+    if len(matches) >= limit:
+        logger.warning(
+            f"{label}: SMARTS {smarts!r} returned {len(matches)} matches, the maximum "
+            f"allowed. Matches beyond this are dropped, so later atoms in the molecule "
+            f"may be missing this role."
+        )
+
+
 def _detect_aromatic_atoms(u: Mda.Universe,
                            rdkit_mol: Chem.Mol,
                            mapping: Dict) -> List[AtomGroup]:
@@ -135,7 +178,9 @@ def _detect_aromatic_atoms(u: Mda.Universe,
             )
             continue
 
-        matches = rdkit_mol.GetSubstructMatches(patt, uniquify=True)
+        match_limit = _substructure_match_limit(rdkit_mol)
+        matches = rdkit_mol.GetSubstructMatches(patt, uniquify=True, maxMatches=match_limit)
+        _warn_if_truncated(matches, match_limit, smarts, "Aromatic detection")
         total_matches += len(matches)
 
         logger.debug(
@@ -549,7 +594,9 @@ def _detect_atoms_by_smarts(u: Mda.Universe,
             logger.warning("%s: invalid SMARTS pattern skipped: %r", label, smarts)
             continue
 
-        matches = rdkit_mol.GetSubstructMatches(patt, uniquify=True)
+        match_limit = _substructure_match_limit(rdkit_mol)
+        matches = rdkit_mol.GetSubstructMatches(patt, uniquify=True, maxMatches=match_limit)
+        _warn_if_truncated(matches, match_limit, smarts, label)
         total_matches += len(matches)
 
         logger.debug(
